@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 
-# Page Configuration
-st.set_page_config(page_title="SME Mini ERP", layout="wide")
+# Page Configuration & Styling
+st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
 
 # --- Database Simulation (Session State) ---
 if 'sales_data' not in st.session_state:
@@ -11,104 +11,180 @@ if 'expenses_data' not in st.session_state:
     st.session_state.expenses_data = []
 
 # --- Sidebar Menu ---
-st.sidebar.title("🏢 SME ERP System")
-page = st.sidebar.radio("Main Menu", ["1. Sales & Invoicing", "2. Operating Expenses", "3. Financial Position & Tax"])
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", width=80)
+st.sidebar.title("SME Tax Expert")
+st.sidebar.markdown("Graduation Project 2025")
+page = st.sidebar.radio("Navigation", [
+    "1. Sales & Invoicing", 
+    "2. Operating Expenses", 
+    "3. Tax Dashboard & Report",
+    "4. About the Project"
+])
 
 # ==========================
 # 1. Sales Module
 # ==========================
 if page == "1. Sales & Invoicing":
-    st.header("🛒 Sales Management")
+    st.title("🛒 Sales Management Module")
+    st.markdown("Record your daily sales to track Gross Revenue.")
     
     with st.form("add_sale"):
         col1, col2 = st.columns(2)
         client_name = col1.text_input("Client Name")
         amount = col2.number_input("Invoice Amount (EGP)", min_value=0.0, step=100.0)
-        submit_sale = st.form_submit_button("Save Invoice")
+        submit_sale = st.form_submit_button("💾 Save Invoice")
         
         if submit_sale and amount > 0:
             st.session_state.sales_data.append({"Client": client_name, "Amount": amount})
             st.success("Invoice saved successfully! ✅")
 
     if st.session_state.sales_data:
-        st.subheader("Invoices Log")
+        st.divider()
+        st.subheader("📋 Invoices Log")
         df_sales = pd.DataFrame(st.session_state.sales_data)
         st.dataframe(df_sales, use_container_width=True)
-        st.metric("Total Revenue", f"EGP {df_sales['Amount'].sum():,.2f}")
+        st.metric("Total Revenue (Turnover)", f"EGP {df_sales['Amount'].sum():,.2f}")
     else:
-        st.info("No sales recorded yet.")
+        st.info("No sales recorded yet. Start by adding an invoice.")
 
 # ==========================
 # 2. Expenses Module
 # ==========================
 elif page == "2. Operating Expenses":
-    st.header("💸 Expense Management")
+    st.title("💸 Expense Management Module")
+    st.markdown("Track operating costs to calculate Net Profit accurately.")
     
     with st.form("add_expense"):
         col1, col2 = st.columns(2)
-        desc = col1.text_input("Expense Item")
+        desc = col1.text_input("Expense Item (e.g., Rent, Salaries)")
         cost = col2.number_input("Cost (EGP)", min_value=0.0, step=100.0)
-        submit_exp = st.form_submit_button("Record Expense")
+        submit_exp = st.form_submit_button("💾 Record Expense")
         
         if submit_exp and cost > 0:
             st.session_state.expenses_data.append({"Item": desc, "Cost": cost})
             st.success("Expense recorded successfully! ✅")
 
     if st.session_state.expenses_data:
-        st.subheader("Expenses Log")
+        st.divider()
+        st.subheader("📋 Expenses Log")
         df_exp = pd.DataFrame(st.session_state.expenses_data)
         st.dataframe(df_exp, use_container_width=True)
-        st.metric("Total Expenses", f"EGP {df_exp['Cost'].sum():,.2f}")
+        st.metric("Total Deductible Expenses", f"EGP {df_exp['Cost'].sum():,.2f}")
     else:
         st.info("No expenses recorded yet.")
 
 # ==========================
 # 3. Tax & Dashboard Module
 # ==========================
-elif page == "3. Financial Position & Tax":
-    st.header("📊 Financial & Tax Dashboard")
-
+elif page == "3. Tax Dashboard & Report":
+    st.title("📊 Financial & Tax Report")
+    
+    # Auto-Calculation
     total_sales = sum(item['Amount'] for item in st.session_state.sales_data)
     total_expenses = sum(item['Cost'] for item in st.session_state.expenses_data)
     net_profit = total_sales - total_expenses
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total Revenue", f"EGP {total_sales:,.2f}")
-    col2.metric("Total Expenses", f"EGP {total_expenses:,.2f}")
-    col3.metric("Net Profit", f"EGP {net_profit:,.2f}", delta_color="normal")
+    # 1. Financial Summary Cards
+    st.markdown("### 💰 Financial Summary")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Total Revenue", f"EGP {total_sales:,.2f}", help="Gross Income from Sales")
+    c2.metric("Total Expenses", f"EGP {total_expenses:,.2f}", help="Deductible Costs")
+    c3.metric("Net Profit", f"EGP {net_profit:,.2f}", delta_color="normal", help="Revenue - Expenses")
 
-    st.markdown("---")
-    st.subheader("⚖️ Tax Calculation Engine")
+    st.divider()
 
-    # 1. Simplified Regime (Law 152/2020)
-    st.markdown("#### 1️⃣ Simplified Regime (Law 152/2020)")
-    tax_152 = 0
-    desc_152 = ""
+    # 2. Tax Calculation Area
+    st.header("⚖️ Tax Liability Analysis")
     
-    if total_sales == 0:
-        st.warning("Please record sales to calculate taxes.")
-    else:
-        if total_sales < 250000: tax_152, desc_152 = 1000, "Fixed Amount"
-        elif total_sales < 500000: tax_152, desc_152 = 2500, "Fixed Amount"
-        elif total_sales < 1000000: tax_152, desc_152 = 5000, "Fixed Amount"
-        elif total_sales < 2000000: tax_152, desc_152 = total_sales * 0.005, "Rate 0.50%"
-        elif total_sales < 3000000: tax_152, desc_152 = total_sales * 0.0075, "Rate 0.75%"
-        elif total_sales <= 10000000: tax_152, desc_152 = total_sales * 0.01, "Rate 1.00%"
+    # Tabs for better design (Doctor's Note: Better UI)
+    tab1, tab2 = st.tabs(["🏢 Simplified Regime (Law 152)", "📝 General Regime (Law 91)"])
+
+    # --- TAB 1: Simplified Regime ---
+    with tab1:
+        st.info("ℹ️ **Explanation:** This regime applies to SMEs with turnover < 10M EGP. It uses fixed amounts or flat rates on *Revenue*.")
         
-        if tax_152 > 0:
-            st.success(f"Tax Liability (Simplified): EGP {tax_152:,.2f} ({desc_152})")
+        tax_152 = 0
+        desc_152 = ""
+        
+        if total_sales == 0:
+            st.warning("Please record sales to view tax.")
         else:
-            st.error("Not Applicable (Turnover > 10M EGP)")
+            # Logic based on Law 152/2020
+            if total_sales < 250000: tax_152, desc_152 = 1000, "Fixed Annual Fee"
+            elif total_sales < 500000: tax_152, desc_152 = 2500, "Fixed Annual Fee"
+            elif total_sales < 1000000: tax_152, desc_152 = 5000, "Fixed Annual Fee"
+            elif total_sales < 2000000: tax_152, desc_152 = total_sales * 0.005, "0.5% of Turnover"
+            elif total_sales < 3000000: tax_152, desc_152 = total_sales * 0.0075, "0.75% of Turnover"
+            elif total_sales <= 10000000: tax_152, desc_152 = total_sales * 0.01, "1.0% of Turnover"
+            
+            if tax_152 > 0:
+                st.success(f"**Tax Due:** EGP {tax_152:,.2f}")
+                st.write(f"**Calculation Logic:** {desc_152}")
+                st.caption("Reference: Law 152/2020 Art. 93-94")
+            else:
+                st.error("Not Applicable (Turnover exceeds 10M EGP)")
 
-    # 2. General Regime (Law 91/2005)
-    st.markdown("#### 2️⃣ General Regime (Law 91/2005)")
-    tax_91 = max(0, net_profit * 0.225)
-    st.info(f"Tax Liability (General): EGP {tax_91:,.2f} (22.5% on Net Profit)")
+    # --- TAB 2: General Regime ---
+    with tab2:
+        st.info("ℹ️ **Explanation:** This is the standard Corporate Income Tax. It is calculated on *Net Profit* (Revenue - Expenses).")
+        st.latex(r'''Tax = (Revenue - Expenses) \times 22.5\%''')
+        
+        tax_91 = max(0, net_profit * 0.225)
+        
+        st.warning(f"**Tax Due:** EGP {tax_91:,.2f}")
+        st.write(f"**Tax Base (Net Profit):** EGP {net_profit:,.2f}")
+        st.caption("Reference: Law 91/2005")
 
-    # Recommendation
+    st.divider()
+    
+    # 3. Smart Recommendation (Comparison)
     if total_sales > 0:
-        st.markdown("### 💡 AI Recommendation")
+        st.subheader("💡 Strategic Recommendation")
         if tax_152 > 0 and tax_152 < tax_91:
-            st.write(f"We recommend the **Simplified Regime** to save **EGP {tax_91 - tax_152:,.2f}**.")
+            savings = tax_91 - tax_152
+            st.success(f"✅ We recommend the **Simplified Regime**. You save **EGP {savings:,.2f}**.")
         elif tax_91 < tax_152:
-            st.write("The **General Regime** might be more beneficial due to high expenses.")
+             st.info("✅ The **General Regime** is better in this case (likely due to high expenses or low profit margin).")
+        else:
+            st.write("Both regimes yield the same tax liability.")
+
+# ==========================
+# 4. About Page (Doctor's Note: Academic Side)
+# ==========================
+elif page == "4. About the Project":
+    st.image("https://cdn-icons-png.flaticon.com/512/3135/3135679.png", width=100)
+    st.title("About SME Tax Expert")
+    st.markdown("### The Design and Evaluation of an Automated Tax Calculation Model for SMEs")
+    
+    st.markdown("""
+    **Project Objective:**
+    To help Egyptian SMEs overcome tax compliance challenges by providing a simplified, automated tool for tax calculation and financial planning.
+    
+    **Problem Statement:**
+    SMEs face high compliance costs and complexity in understanding Egyptian tax laws (Law 91 & Law 152), leading to unintentional errors[cite: 63].
+    
+    **Legal References:**
+    * **Income Tax Law No. 91 of 2005**
+    * **MSME Development Law No. 152 of 2020**
+    * **VAT Law No. 67 of 2016**
+    """)
+    
+    st.divider()
+    st.subheader("👥 Project Team")
+    
+    # Team Table
+    team_data = {
+        "Name": [
+            "Basmala Mohamed Saad", "Mennatallah Moamen", "Mareez Adham", 
+            "Omar Mohamed", "Abdelrahman Ali", "Fares Salah", 
+            "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"
+        ],
+        "ID": [
+            "2200236", "2200216", "2200243", 
+            "2202297", "2200190", "2202312", 
+            "2200137", "2200176", "2202995"
+        ]
+    }
+    st.table(pd.DataFrame(team_data))
+
+    st.caption("Graduation Project - 2025")
