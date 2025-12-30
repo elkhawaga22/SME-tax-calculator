@@ -13,7 +13,7 @@ if 'expenses_data' not in st.session_state:
 # --- Sidebar Menu ---
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", width=80)
 st.sidebar.title("SME Tax Expert")
-st.sidebar.markdown("Graduation Project 2025")
+st.sidebar.markdown("Graduation Project 2026")  # <--- تم التعديل هنا
 page = st.sidebar.radio("Navigation", [
     "1. Sales & Invoicing", 
     "2. Operating Expenses", 
@@ -96,7 +96,6 @@ elif page == "3. Tax Dashboard & Report":
     # 2. Tax Calculation Area
     st.header("⚖️ Tax Liability Analysis")
     
-    # Tabs for better design (Doctor's Note: Better UI)
     tab1, tab2 = st.tabs(["🏢 Simplified Regime (Law 152)", "📝 General Regime (Law 91)"])
 
     # --- TAB 1: Simplified Regime ---
@@ -109,7 +108,6 @@ elif page == "3. Tax Dashboard & Report":
         if total_sales == 0:
             st.warning("Please record sales to view tax.")
         else:
-            # Logic based on Law 152/2020
             if total_sales < 250000: tax_152, desc_152 = 1000, "Fixed Annual Fee"
             elif total_sales < 500000: tax_152, desc_152 = 2500, "Fixed Annual Fee"
             elif total_sales < 1000000: tax_152, desc_152 = 5000, "Fixed Annual Fee"
@@ -137,7 +135,7 @@ elif page == "3. Tax Dashboard & Report":
 
     st.divider()
     
-    # 3. Smart Recommendation (Comparison)
+    # 3. Smart Recommendation
     if total_sales > 0:
         st.subheader("💡 Strategic Recommendation")
         if tax_152 > 0 and tax_152 < tax_91:
@@ -149,7 +147,7 @@ elif page == "3. Tax Dashboard & Report":
             st.write("Both regimes yield the same tax liability.")
 
 # ==========================
-# 4. About Page (Doctor's Note: Academic Side)
+# 4. About Page
 # ==========================
 elif page == "4. About the Project":
     st.image("https://cdn-icons-png.flaticon.com/512/3135/3135679.png", width=100)
@@ -161,7 +159,7 @@ elif page == "4. About the Project":
     To help Egyptian SMEs overcome tax compliance challenges by providing a simplified, automated tool for tax calculation and financial planning.
     
     **Problem Statement:**
-    SMEs face high compliance costs and complexity in understanding Egyptian tax laws (Law 91 & Law 152), leading to unintentional errors[cite: 63].
+    SMEs face high compliance costs and complexity in understanding Egyptian tax laws (Law 91 & Law 152), leading to unintentional errors.
     
     **Legal References:**
     * **Income Tax Law No. 91 of 2005**
@@ -172,7 +170,6 @@ elif page == "4. About the Project":
     st.divider()
     st.subheader("👥 Project Team")
     
-    # Team Table
     team_data = {
         "Name": [
             "Basmala Mohamed Saad", "Mennatallah Moamen", "Mareez Adham", 
@@ -187,4 +184,4 @@ elif page == "4. About the Project":
     }
     st.table(pd.DataFrame(team_data))
 
-    st.caption("Graduation Project - 2026")
+    st.caption("Graduation Project - 2026") # <--- تم التعديل هنا أيضاً
