@@ -187,4 +187,4 @@ elif page == "4. About the Project":
     }
     st.table(pd.DataFrame(team_data))
 
-    st.caption("Graduation Project - 2025")
+    st.caption("Graduation Project - 2026")
