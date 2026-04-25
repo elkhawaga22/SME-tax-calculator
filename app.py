@@ -1,138 +1,131 @@
 import streamlit as st
 import pandas as pd
-import requests
-
-# حط الـ API Key الجديد هنا
-API_KEY = "AIzaSyDJpTMxu40h_WiDyJZ_WB8TQD2xFmFRnEU"
 
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
 
-if 'sales_data' not in st.session_state: 
-    st.session_state.sales_data = []
-if 'expenses_data' not in st.session_state: 
-    st.session_state.expenses_data = []
-if "messages" not in st.session_state: 
-    st.session_state.messages = []
+if 'sales_data' not in st.session_state: st.session_state.sales_data = []
+if 'expenses_data' not in st.session_state: st.session_state.expenses_data = []
 
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", width=80)
-st.sidebar.title("SME Tax Expert")
-page = st.sidebar.radio("Navigation", ["Sales", "Expenses", "Dashboard", "AI Chat", "About"])
+st.sidebar.title("🇪🇬 SME Tax Expert")
+st.sidebar.markdown("**Graduation Project 2026**")
+
+page = st.sidebar.radio("القوائم", ["🛒 المبيعات", "💸 المصروفات", "📊 لوحة الضرائب", "👥 الفريق"])
 
 # 1. Sales
-if page == "Sales":
-    st.title("🛒 Sales")
-    with st.form("sales"):
-        col1, col2 = st.columns(2)
-        client = col1.text_input("Client Name")
-        amount = col2.number_input("Amount EGP", min_value=0.0)
-        if st.form_submit_button("Save"):
-            st.session_state.sales_data.append({"Client": client, "Amount": amount})
-            st.success("Saved!")
+if page == "🛒 المبيعات":
+    st.title("🛒 إدارة المبيعات والفواتير")
+    
+    with st.form("sales_form"):
+        col1, col2, col3 = st.columns(3)
+        client = col1.text_input("اسم العميل")
+        date = col2.date_input("التاريخ")
+        amount = col3.number_input("قيمة الفاتورة (جنيه)", min_value=0.0)
+        
+        col_btn, col_clear = st.columns(2)
+        with col_btn:
+            save = st.form_submit_button("💾 حفظ الفاتورة", use_container_width=True)
+        with col_clear:
+            clear = st.form_submit_button("🗑️ مسح", use_container_width=True)
+        
+        if save and amount > 0:
+            st.session_state.sales_data.append({
+                "Client": client, 
+                "Date": date, 
+                "Amount": amount
+            })
+            st.success("✅ تم حفظ الفاتورة!")
+            st.rerun()
+        if clear:
+            st.session_state.sales_data = []
+            st.success("🗑️ تم مسح البيانات")
             st.rerun()
     
     if st.session_state.sales_data:
         df = pd.DataFrame(st.session_state.sales_data)
-        st.dataframe(df)
-        st.metric("Total Sales", f"EGP {df['Amount'].sum():,.0f}")
-    if st.button("Clear All"):
-        st.session_state.sales_data = []
-        st.rerun()
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("إجمالي المبيعات", f"{df['Amount'].sum():,.0f} جنيه")
+        col2.metric("عدد الفواتير", f"{len(df)}")
+        col3.metric("متوسط الفاتورة", f"{df['Amount'].mean():,.0f} جنيه")
 
 # 2. Expenses
-elif page == "Expenses":
-    st.title("💸 Expenses")
-    with st.form("expenses"):
-        col1, col2 = st.columns(2)
-        item = col1.text_input("Item")
-        cost = col2.number_input("Cost EGP", min_value=0.0)
-        if st.form_submit_button("Save"):
-            st.session_state.expenses_data.append({"Item": item, "Cost": cost})
-            st.success("Saved!")
+elif page == "💸 المصروفات":
+    st.title("💸 إدارة المصروفات التشغيلية")
+    
+    with st.form("expenses_form"):
+        col1, col2, col3 = st.columns(3)
+        category = col1.selectbox("الفئة", ["إيجار", "كهرباء", "رواتب", "صيانة", "أخرى"])
+        item = col2.text_input("تفاصيل المصروف")
+        cost = col3.number_input("التكلفة (جنيه)", min_value=0.0)
+        
+        col_btn, col_clear = st.columns(2)
+        with col_btn:
+            save = st.form_submit_button("💾 تسجيل المصروف", use_container_width=True)
+        with col_clear:
+            clear = st.form_submit_button("🗑️ مسح", use_container_width=True)
+        
+        if save and cost > 0:
+            st.session_state.expenses_data.append({
+                "Category": category,
+                "Item": item,
+                "Cost": cost
+            })
+            st.success("✅ تم تسجيل المصروف!")
+            st.rerun()
+        if clear:
+            st.session_state.expenses_data = []
+            st.success("🗑️ تم مسح البيانات")
             st.rerun()
     
     if st.session_state.expenses_data:
         df = pd.DataFrame(st.session_state.expenses_data)
-        st.dataframe(df)
-        st.metric("Total Expenses", f"EGP {df['Cost'].sum():,.0f}")
-    if st.button("Clear All"):
-        st.session_state.expenses_data = []
-        st.rerun()
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.metric("إجمالي المصروفات", f"{df['Cost'].sum():,.0f} جنيه")
 
 # 3. Dashboard
-elif page == "Dashboard":
-    st.title("📊 Tax Dashboard")
-    sales = sum(d['Amount'] for d in st.session_state.sales_data)
-    expenses = sum(d['Cost'] for d in st.session_state.expenses_data)
-    profit = sales - expenses
+elif page == "📊 لوحة الضرائب":
+    st.title("📊 لوحة تحكم الضرائب")
     
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Sales", f"EGP {sales:,.0f}")
-    col2.metric("Expenses", f"EGP {expenses:,.0f}")
-    col3.metric("Profit", f"EGP {profit:,.0f}")
+    sales_total = sum(d['Amount'] for d in st.session_state.sales_data)
+    expenses_total = sum(d['Cost'] for d in st.session_state.expenses_data)
+    profit = sales_total - expenses_total
     
-    tab1, tab2 = st.tabs(["Law 152", "Law 91"])
+    # Metrics
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("💰 إجمالي المبيعات", f"{sales_total:,.0f} جنيه")
+    col2.metric("💸 إجمالي المصروفات", f"{expenses_total:,.0f} جنيه")
+    col3.metric("💵 صافي الربح", f"{profit:,.0f} جنيه")
+    col4.metric("📈 هامش الربح", f"{(profit/sales_total*100):.1f}%" if sales_total > 0 else "0%")
+    
+    # Tax Calculations
+    st.subheader("💼 حسابات الضرائب")
+    tab1, tab2 = st.tabs(["قانون 152/2021 (مبسط)", "قانون 91/2005 (عام)"])
+    
     with tab1:
-        tax = 5000 if sales < 1000000 else sales * 0.01
-        st.success(f"Tax: EGP {tax:,.0f}")
+        st.info("**نظام الضريبة المبسط للشركات الصغيرة**")
+        if sales_total < 1000000:
+            tax_152 = 5000
+            st.success(f"✅ الضريبة الثابتة: **5,000 جنيه**")
+        elif sales_total < 5000000:
+            tax_152 = sales_total * 0.01
+            st.success(f"✅ نسبة 1%: **{tax_152:,.0f} جنيه**")
+        else:
+            tax_152 = sales_total * 0.015
+            st.success(f"✅ نسبة 1.5%: **{tax_152:,.0f} جنيه**")
+    
     with tab2:
-        tax = max(0, profit * 0.225)
-        st.warning(f"Tax: EGP {tax:,.0f}")
+        st.warning("**النظام العام للضرائب**")
+        taxable_profit = max(0, profit * 0.8)  # بعد الخصومات
+        tax_91 = taxable_profit * 0.225
+        st.warning(f"💰 الضريبة المتوقعة (22.5%): **{tax_91:,.0f} جنيه**")
 
-# 4. AI Chat
-elif page == "AI Chat":
-    st.header("🤖 Tax Assistant")
-    
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-    
-    if st.button("Clear Chat"):
-        st.session_state.messages = []
-        st.rerun()
-    
-    prompt = st.chat_input("Ask about taxes...")
-    if prompt:
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                try:
-                    sales = sum(d['Amount'] for d in st.session_state.sales_data)
-                    expenses = sum(d['Cost'] for d in st.session_state.expenses_data)
-                    
-                    # API v1 - الأحدث والمضمون
-                    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key={API_KEY}"
-                    
-                    payload = {
-                        "contents": [{
-                            "parts": [{
-                                "text": f"Egyptian SME Tax Expert. Sales: EGP{sales:,.0f}, Expenses: EGP{expenses:,.0f}. Question: {prompt}"
-                            }]
-                        }]
-                    }
-                    
-                    response = requests.post(url, json=payload)
-                    
-                    if response.status_code == 200:
-                        data = response.json()
-                        answer = data['candidates'][0]['content']['parts'][0]['text']
-                        st.markdown(answer)
-                        st.session_state.messages.append({"role": "assistant", "content": answer})
-                    else:
-                        st.error("API Error - Check Key")
-                        st.info("Works without AI too!")
-                except:
-                    st.error("Connection error")
-
-# 5. About
-elif page == "About":
-    st.title("Team")
+# 4. Team
+elif page == "👥 الفريق":
+    st.title("👥 فريق المشروع")
     st.markdown("""
-    **SME Tax Expert**
+    # SME Tax Expert
+    **مشروع تخرج 2026**
     
-    - Omar Mohamed Ahmed (2202297)
-    - Mennatallah Moamen (2200216) 
-    - Mareez Adham (2200243)
-    """)
+    
