@@ -1,47 +1,22 @@
 import streamlit as st
 import pandas as pd
-import requests
-import json
 
-# 1. الإعدادات والذكاء الاصطناعي
-# استخدمنا المفتاح الذي نجح في التيست الخاص بك
-API_KEY = "AIzaSyD7FvVcME2hyYWrLT31u3Ufdeoc3LjjYfQ"
-
-def get_ai_response(prompt):
-    # استخدام الرابط المباشر لتجنب مشاكل المكتبات
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-exp:generateContent?key={API_KEY}"
-    headers = {'Content-Type': 'application/json'}
-    payload = {
-        "contents": [{"parts": [{"text": f"You are an Egyptian tax expert. Answer professionally: {prompt}"}]}]
-    }
-    try:
-        response = requests.post(url, headers=headers, json=payload, timeout=10)
-        result = response.json()
-        if "candidates" in result and len(result["candidates"]) > 0:
-            return result['candidates'][0]['content']['parts'][0]['text']
-        else:
-            return "الخدمة مشغولة حالياً، يرجى المحاولة بعد لحظات."
-    except:
-        return "عذراً، حدث خطأ في الاتصال بالذكاء الاصطناعي."
-
-# 2. إعدادات الصفحة
+# 1. إعدادات الصفحة
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
 
-# تهيئة البيانات
+# --- تهيئة مخزن البيانات ---
 if 'sales_data' not in st.session_state: st.session_state.sales_data = []
 if 'expenses_data' not in st.session_state: st.session_state.expenses_data = []
-if "messages" not in st.session_state: st.session_state.messages = []
 
-# --- Sidebar ---
-st.sidebar.title("SME Tax Expert")
-st.sidebar.markdown("Graduation Project 2026")
+# --- القائمة الجانبية ---
+st.sidebar.title("🏢 SME Tax Expert")
+st.sidebar.markdown("**Graduation Project 2026**") 
 
 page = st.sidebar.radio("Navigation", [
     "1. Sales & Invoicing", 
     "2. Operating Expenses", 
     "3. Tax Dashboard & Report",
-    "4. Smart Tax Assistant 🤖",
-    "5. About the Project"
+    "4. About the Project"
 ])
 
 # ==========================
@@ -53,65 +28,97 @@ if page == "1. Sales & Invoicing":
         col1, col2 = st.columns(2)
         client = col1.text_input("Client Name")
         amount = col2.number_input("Invoice Amount (EGP)", min_value=0.0)
-        if st.form_submit_button("Save"):
+        if st.form_submit_button("💾 Save Invoice") and amount > 0:
             st.session_state.sales_data.append({"Client": client, "Amount": amount})
-            st.success("Saved!")
-    st.dataframe(pd.DataFrame(st.session_state.sales_data), use_container_width=True)
+            st.success("Invoice saved! ✅")
+    
+    if st.session_state.sales_data:
+        st.dataframe(pd.DataFrame(st.session_state.sales_data), use_container_width=True)
 
 # ==========================
 # 2. Expenses Module
 # ==========================
 elif page == "2. Operating Expenses":
-    st.title("💸 Expenses")
+    st.title("💸 Expense Management")
     with st.form("add_exp"):
-        item = st.text_input("Item")
-        cost = st.number_input("Cost (EGP)", min_value=0.0)
-        if st.form_submit_button("Record"):
+        col1, col2 = st.columns(2)
+        item = col1.text_input("Expense Item")
+        cost = col2.number_input("Cost (EGP)", min_value=0.0)
+        if st.form_submit_button("💾 Record Expense") and cost > 0:
             st.session_state.expenses_data.append({"Item": item, "Cost": cost})
-            st.success("Recorded!")
-    st.dataframe(pd.DataFrame(st.session_state.expenses_data), use_container_width=True)
+            st.success("Recorded! ✅")
+    
+    if st.session_state.expenses_data:
+        st.dataframe(pd.DataFrame(st.session_state.expenses_data), use_container_width=True)
 
 # ==========================
-# 3. Dashboard
+# 3. Tax Dashboard & Report (المعادلات والتفاصيل هنا)
 # ==========================
 elif page == "3. Tax Dashboard & Report":
-    st.title("📊 Tax Dashboard")
-    rev = sum(d['Amount'] for d in st.session_state.sales_data)
-    exp = sum(d['Cost'] for d in st.session_state.expenses_data)
-    profit = rev - exp
+    st.title("📊 Detailed Financial & Tax Report")
     
+    total_sales = sum(item['Amount'] for item in st.session_state.sales_data)
+    total_expenses = sum(item['Cost'] for item in st.session_state.expenses_data)
+    net_profit = total_sales - total_expenses
+    
+    # ملخص سريع
     c1, c2, c3 = st.columns(3)
-    c1.metric("Revenue", f"{rev:,.2f}")
-    c2.metric("Expenses", f"{exp:,.2f}")
-    c3.metric("Profit", f"{profit:,.2f}")
+    c1.metric("Total Revenue", f"{total_sales:,.2f}")
+    c2.metric("Total Expenses", f"{total_expenses:,.2f}")
+    c3.metric("Net Profit", f"{net_profit:,.2f}")
 
     st.markdown("---")
-    tax_152 = 5000 if rev < 1000000 else rev * 0.01
-    st.info(f"Estimated Tax (Law 152): EGP {tax_152:,.2f}")
-
-# ==========================
-# 4. AI Assistant
-# ==========================
-elif page == "4. Smart Tax Assistant 🤖":
-    st.header("Smart Tax Assistant 🤖")
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]): st.markdown(msg["content"])
-
-    if prompt := st.chat_input("Ask here..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"): st.markdown(prompt)
+    
+    tab1, tab2 = st.tabs(["🏢 Law 152 (Simplified)", "📝 Law 91 (Standard)"])
+    
+    with tab1:
+        st.subheader("Law 152 for Small Enterprises")
+        st.write("This law calculates tax based on **Total Revenue** (Sales) regardless of expenses.")
         
-        with st.chat_message("assistant"):
-            answer = get_ai_response(prompt)
-            st.markdown(answer)
-            st.session_state.messages.append({"role": "assistant", "content": answer})
+        # منطق حساب قانون 152 بالتفصيل
+        if total_sales < 250000:
+            tax_152 = 1000
+            calc_note = "Fixed tax: 1,000 EGP (Revenue < 250k)"
+        elif total_sales < 500000:
+            tax_152 = 2500
+            calc_note = "Fixed tax: 2,500 EGP (Revenue 250k - 500k)"
+        elif total_sales < 1000000:
+            tax_152 = 5000
+            calc_note = "Fixed tax: 5,000 EGP (Revenue 500k - 1M)"
+        elif total_sales < 2000000:
+            tax_152 = total_sales * 0.005
+            calc_note = "Rate: 0.5% of total revenue"
+        elif total_sales < 3000000:
+            tax_152 = total_sales * 0.0075
+            calc_note = "Rate: 0.75% of total revenue"
+        else:
+            tax_152 = total_sales * 0.01
+            calc_note = "Rate: 1.0% of total revenue"
+
+        st.success(f"**Estimated Tax: EGP {tax_152:,.2f}**")
+        st.info(f"**Calculation Basis:** {calc_note}")
+        
+    with tab2:
+        st.subheader("Law 91 (Income Tax)")
+        st.write("This tax is calculated based on **Net Profit** (Revenue - Expenses).")
+        
+        # منطق حساب قانون 91 (ضريبة الأرباح التجارية)
+        tax_91_rate = 0.225
+        tax_91 = max(0, net_profit * tax_91_rate)
+        
+        st.warning(f"**Estimated Tax: EGP {tax_91:,.2f}**")
+        st.info(f"**Calculation Basis:** 22.5% of Net Profit ({net_profit:,.2f} x 22.5%)")
+        
+        if net_profit <= 0:
+            st.error("Note: No tax due because there is no net profit.")
 
 # ==========================
-# 5. Team
+# 4. About Page
 # ==========================
-elif page == "5. About the Project":
+elif page == "4. About the Project":
     st.title("Project Team")
-    team = pd.DataFrame({
-        "Name": ["Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"]
-    })
-    st.table(team)
+    team_data = {
+        "Name": ["Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"],
+        "ID": ["2202297", "2200216", "2200243", "2200236", "2200190", "2202312", "2200137", "2200176", "2202995"]
+    }
+    st.table(pd.DataFrame(team_data))
