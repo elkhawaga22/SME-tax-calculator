@@ -3,7 +3,7 @@ import pandas as pd
 import google.generativeai as genai
 
 # 1. AI Configuration
-# Note: Ensure this API key is active in Google AI Studio
+# REPLACE 'YOUR_NEW_API_KEY_HERE' with the new key you just created
 genai.configure(api_key="AIzaSyCULRB3xyOnO9f87qoUVYsSUhqa9yrQRNE")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
@@ -57,7 +57,7 @@ if page == "1. Sales & Invoicing":
         st.info("No sales recorded yet. Start by adding an invoice.")
 
 # ==========================
-# 2. Expenses Module
+# 2. Operating Expenses Module
 # ==========================
 elif page == "2. Operating Expenses":
     st.title("💸 Expense Management Module")
@@ -104,7 +104,7 @@ elif page == "3. Tax Dashboard & Report":
     tab1, tab2 = st.tabs(["🏢 Simplified Regime (Law 152)", "📝 General Regime (Law 91)"])
 
     with tab1:
-        st.info("ℹ️ **Explanation:** This regime applies to SMEs with turnover < 10M EGP. It uses fixed amounts or flat rates on *Revenue*.")
+        st.info("ℹ️ **Explanation:** This regime applies to SMEs with turnover < 10M EGP.")
         tax_152 = 0
         desc_152 = ""
         if total_sales == 0:
@@ -120,31 +120,14 @@ elif page == "3. Tax Dashboard & Report":
             if tax_152 > 0:
                 st.success(f"**Tax Due:** EGP {tax_152:,.2f}")
                 st.write(f"**Calculation Logic:** {desc_152}")
-                st.caption("Reference: Law 152/2020 Art. 93-94")
-            else:
-                st.error("Not Applicable (Turnover exceeds 10M EGP)")
-
+    
     with tab2:
-        st.info("ℹ️ **Explanation:** This is the standard Corporate Income Tax. It is calculated on *Net Profit*.")
-        st.markdown(r"Tax = (Revenue - Expenses) $\times$ 22.5%")
+        st.info("ℹ️ **Explanation:** Standard Corporate Income Tax (22.5% of Net Profit).")
         tax_91 = max(0, net_profit * 0.225)
         st.warning(f"**Tax Due:** EGP {tax_91:,.2f}")
-        st.write(f"**Tax Base (Net Profit):** EGP {net_profit:,.2f}")
-        st.caption("Reference: Law 91/2005")
-
-    st.divider()
-    if total_sales > 0:
-        st.subheader("💡 Strategic Recommendation")
-        if tax_152 > 0 and tax_152 < tax_91:
-            savings = tax_91 - tax_152
-            st.success(f"✅ We recommend the **Simplified Regime**. You save **EGP {savings:,.2f}**.")
-        elif tax_91 < tax_152:
-             st.info("✅ The **General Regime** is better in this case (likely due to high expenses).")
-        else:
-            st.write("Both regimes yield the same tax liability.")
 
 # ==========================
-# 4. Smart Tax Assistant (Now #4 & English)
+# 4. Smart Tax Assistant (English & Fixed Indentation)
 # ==========================
 elif page == "4. Smart Tax Assistant 🤖":
     st.header("Smart Tax Assistant 🤖")
@@ -169,34 +152,23 @@ elif page == "4. Smart Tax Assistant 🤖":
                 full_response = response.text
                 st.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
-           except Exception as e:
+            except Exception as e:
                 st.error(f"AI Connection Error: {e}")
 
 # ==========================
-# 5. About Page (Now #5 & Updated Team)
+# 5. About Page (Updated Team)
 # ==========================
 elif page == "5. About the Project":
     st.image("https://cdn-icons-png.flaticon.com/512/3135/3135679.png", width=100)
     st.title("About SME Tax Expert")
-    st.markdown("### The Design and Evaluation of an Automated Tax Calculation Model for SMEs")
     
     st.markdown("""
     **Project Objective:**
-    To help Egyptian SMEs overcome tax compliance challenges by providing a simplified tool for tax calculation.
+    To help Egyptian SMEs overcome tax compliance challenges by providing an automated tool for tax calculation.
     
-    **Problem Statement:**
-    SMEs face complexity in understanding Egyptian tax laws (Law 91 & Law 152), leading to unintentional errors.
-    
-    **Legal References:**
-    * Income Tax Law No. 91 of 2005
-    * MSME Development Law No. 152 of 2020
-    * VAT Law No. 67 of 2016
+    **Project Team:**
     """)
     
-    st.divider()
-    st.subheader("👥 Project Team")
-    
-    # Updated team with Omar Mohamed Ahmed at the top
     team_data = {
         "Name": [
             "Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", 
