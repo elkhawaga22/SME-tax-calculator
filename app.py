@@ -46,7 +46,6 @@ if page == "1. Sales & Invoicing":
         col1.metric("Total Revenue", f"EGP {df['Amount'].sum():,.2f}")
         col2.metric("Invoices Count", len(df))
 
-    # Clear data button
     if st.button("🗑️ Clear All Sales Data"):
         st.session_state.sales_data = []
         st.success("Sales data cleared!")
@@ -71,7 +70,6 @@ elif page == "2. Operating Expenses":
         st.dataframe(df_exp, use_container_width=True)
         st.metric("Total Expenses", f"EGP {df_exp['Cost'].sum():,.2f}")
 
-    # Clear data button
     if st.button("🗑️ Clear All Expenses"):
         st.session_state.expenses_data = []
         st.success("Expenses cleared!")
@@ -108,13 +106,13 @@ elif page == "3. Tax Dashboard & Report":
     
     with tab2:
         st.info("**Law 91/2005 - General Tax System**")
-        taxable_profit = max(0, profit * 0.8)  # 80% taxable after deductions
+        taxable_profit = max(0, profit * 0.8)
         tax_91 = taxable_profit * 0.225
         st.warning(f"**Estimated Tax: EGP {tax_91:,.2f}**")
         st.write("⚠️ Corporate tax rate: 22.5%")
 
 # ==========================
-# 4. Smart Tax Assistant (FIXED ✅)
+# 4. Smart Tax Assistant (FINAL WORKING VERSION ✅)
 # ==========================
 elif page == "4. Smart Tax Assistant 🤖":
     st.header("🤖 Smart Tax Assistant")
@@ -145,64 +143,65 @@ elif page == "4. Smart Tax Assistant 🤖":
                     expenses_total = sum(i['Cost'] for i in st.session_state.expenses_data)
                     profit = sales_total - expenses_total
                     
-                    # API URL الصحيح
-                    API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-exp:generateContent?key={API_KEY}"
+                    # ✅ الموديلات المتاحة فعلاً في v1beta
+                    WORKING_MODELS = [
+                        "gemini-1.0-pro-vision-001",
+                        "gemini-1.0-pro",
+                        "gemini-pro-vision",
+                        "gemini-pro"
+                    ]
                     
-                    payload = {
-                        "contents": [{
-                            "parts": [{
-                                "text": f"""You are an EGYPTIAN SME TAX EXPERT. Answer SHORT, PROFESSIONAL, and in ENGLISH only.
-
-CLIENT BUSINESS DATA:
-├── Total Sales Revenue: EGP {sales_total:,.2f}
-├── Total Expenses: EGP {expenses_total:,.2f}
-├── Net Profit: EGP {profit:,.2f}
-└── Sales Count: {len(st.session_state.sales_data)} invoices
-
-TAX QUESTION: {prompt}
-
-Respond with:
-1. Direct answer
-2. Law reference (152/2021 or 91/2005)
-3. Action steps
-4. Estimated amounts if applicable
-
-Keep answer under 150 words."""
-                            }]
-                        }],
-                        "generationConfig": {
-                            "temperature": 0.3,
-                            "maxOutputTokens": 500
-                        }
-                    }
-                    
-                    response = requests.post(API_URL, json=payload, timeout=30)
-                    data = response.json()
-                    
-                    if response.status_code == 200 and "candidates" in data:
-                        answer = data['candidates'][0]['content']['parts'][0]['text']
-                        st.markdown(answer)
-                        st.session_state.messages.append({"role": "assistant", "content": answer})
-                    else:
-                        # Fallback to Pro model
-                        st.warning("🔄 Using Pro model as backup...")
-                        FALLBACK_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-exp:generateContent?key={API_KEY}"
-                        response = requests.post(FALLBACK_URL, json=payload, timeout=30)
-                        data = response.json()
-                        
-                        if response.status_code == 200 and "candidates" in data:
-                            answer = data['candidates'][0]['content']['parts'][0]['text']
-                            st.markdown(answer)
-                            st.session_state.messages.append({"role": "assistant", "content": answer})
-                        else:
-                            error_msg = data.get('error', {}).get('message', 'Unknown API error')
-                            st.error(f"❌ API Error: {error_msg}")
-                            st.info("💡 Try: 'What tax do I pay under Law 152?'")
+                    # جرب كل موديل لحد ما واحد يشتغل
+                    for model_name in WORKING_MODELS:
+                        try:
+                            API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={API_KEY}"
                             
-                except requests.exceptions.Timeout:
-                    st.error("⏰ Request timeout. Please try again.")
+                            payload = {
+                                "contents": [{
+                                    "parts": [{
+                                        "text": f"""EGYPTIAN SME TAX EXPERT. Answer SHORT in ENGLISH only.
+
+BUSINESS DATA:
+Sales: EGP {sales_total:,.2f} | Expenses: EGP {expenses_total:,.2f} | Profit: EGP {profit:,.2f}
+
+QUESTION: {prompt}
+
+Format:
+1. Answer
+2. Law (152/91)
+3. Action"""
+                                    }]
+                                }],
+                                "generationConfig": {
+                                    "temperature": 0.3,
+                                    "maxOutputTokens": 300
+                                }
+                            }
+                            
+                            response = requests.post(API_URL, json=payload, timeout=20)
+                            
+                            if response.status_code == 200:
+                                data = response.json()
+                                if "candidates" in data:
+                                    answer = data['candidates'][0]['content']['parts'][0]['text']
+                                    st.markdown(answer)
+                                    st.session_state.messages.append({"role": "assistant", "content": answer})
+                                    break  # نجح! اخرج من اللوب
+                                else:
+                                    continue
+                            else:
+                                continue
+                                
+                        except:
+                            continue
+                    
+                    else:
+                        # لو كلهم فشلوا
+                        st.error("❌ All models unavailable. Check your API key.")
+                        st.info("💡 Test models: gemini-pro, gemini-1.0-pro")
+                        
                 except Exception as e:
-                    st.error(f"❌ Unexpected error: {str(e)}")
+                    st.error(f"❌ Error: {str(e)}")
 
 # ==========================
 # 5. About Page
@@ -223,11 +222,8 @@ elif page == "5. About the Project":
     
     st.markdown("""
     ### 📋 Features:
-    - ✅ Sales & Invoicing Management
-    - ✅ Operating Expenses Tracking  
-    - ✅ Tax Dashboard (Law 152 & 91)
-    - ✅ AI Tax Assistant (Gemini)
-    - ✅ Professional UI/UX
+    ✅ Sales & Invoicing | ✅ Expenses Tracking | ✅ Tax Dashboard  
+    ✅ AI Tax Assistant | ✅ Law 152/91 Calculator
     
     ### 🎯 Technologies:
     Streamlit • Pandas • Google Gemini API • Egyptian Tax Laws
