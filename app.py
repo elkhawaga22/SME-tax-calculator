@@ -8,17 +8,28 @@ st.set_page_config(
     page_icon="🇪🇬"
 )
 
-# UI Customization via CSS
+# --- CSS FIX: Ensuring text is visible on white metric cards ---
 st.markdown("""
     <style>
+    /* Main background */
     .main {
-        background-color: #f8f9fa;
+        background-color: #f0f2f6;
     }
-    .stMetric {
-        background-color: #ffffff;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    /* Metric Card Styling */
+    [data-testid="stMetric"] {
+        background-color: #ffffff !important;
+        padding: 20px !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        border: 1px solid #e0e0e0 !important;
+    }
+    /* Force text color to be dark inside metric cards for visibility */
+    [data-testid="stMetricLabel"] {
+        color: #31333F !important;
+        font-weight: bold !important;
+    }
+    [data-testid="stMetricValue"] {
+        color: #000000 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -96,8 +107,8 @@ if menu == "🛒 Sales & Invoicing":
     if st.session_state.sales_data:
         st.markdown("### Current Sales Log")
         df_sales = pd.DataFrame(st.session_state.sales_data)
-        st.table(df_sales)
-        st.metric("Total Revenue", f"{df_sales['Amount'].sum():,.2f} EGP")
+        st.dataframe(df_sales, use_container_width=True)
+        st.metric("Total Revenue Sum", f"{df_sales['Amount'].sum():,.2f} EGP")
 
 # ==========================================
 # 2. Expenses Page
@@ -119,8 +130,8 @@ elif menu == "💸 Operating Expenses":
     if st.session_state.expenses_data:
         st.markdown("### Current Expenses Log")
         df_expenses = pd.DataFrame(st.session_state.expenses_data)
-        st.table(df_expenses)
-        st.metric("Total Expenses", f"{df_expenses['Cost'].sum():,.2f} EGP")
+        st.dataframe(df_expenses, use_container_width=True)
+        st.metric("Total Expenses Sum", f"{df_expenses['Cost'].sum():,.2f} EGP")
 
 # ==========================================
 # 3. Reports & Tax Dashboard Page
@@ -133,6 +144,7 @@ elif menu == "📊 Reports & Tax Dashboard":
     net_profit = total_rev - total_exp
     
     st.markdown("### Financial Performance Summary")
+    # These will now have dark text on a white background
     m1, m2, m3 = st.columns(3)
     m1.metric("Total Revenue", f"{total_rev:,.2f} EGP")
     m2.metric("Total Expenses", f"{total_exp:,.2f} EGP")
