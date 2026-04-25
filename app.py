@@ -1,197 +1,216 @@
 import streamlit as st
 import pandas as pd
 
-# 1. إعدادات الصفحة المتقدمة
+# 1. إعدادات الصفحة
 st.set_page_config(
     page_title="SME Tax Calculator Pro",
     layout="wide",
-    page_icon="💎"
+    page_icon="🏦"
 )
 
-# --- CSS التنسيق "الشيك" جداً ---
-def apply_custom_style(role):
-    primary_color = "#D4AF37" if role == "premium" else "#1E3A8A" # ذهبي للبريميم / أزرق للمجاني
+# --- CSS السحر لتغيير الشكل 180 درجة ---
+st.markdown("""
+    <style>
+    /* تثبيت الخلفية لتكون احترافية */
+    .stApp {
+        background-color: #f8fafc;
+    }
     
-    st.markdown(f"""
-        <style>
-        /* الخلفية العامة */
-        .stApp {{
-            background-color: #f4f7f9;
-        }}
-        
-        /* تنسيق الكروت (Metrics) */
-        [data-testid="stMetric"] {{
-            background: white !important;
-            padding: 25px !important;
-            border-radius: 15px !important;
-            border-top: 5px solid {primary_color} !important;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
-        }}
-        
-        /* تنسيق القائمة الجانبية */
-        section[data-testid="stSidebar"] {{
-            background-color: #ffffff !important;
-            border-right: 1px solid #e0e0e0;
-        }}
-        
-        /* بادج البريميم */
-        .premium-badge {{
-            padding: 5px 15px;
-            border-radius: 20px;
-            background: linear-gradient(45deg, #D4AF37, #F9E79F);
-            color: #000;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3);
-        }}
-        
-        /* العناوين */
-        h1, h2, h3 {{
-            color: #1a202c !important;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }}
-        </style>
+    /* تنسيق القائمة الجانبية */
+    [data-testid="stSidebar"] {
+        background-color: #ffffff !important;
+        border-right: 1px solid #e2e8f0;
+    }
+    
+    /* تنسيق الكروت (الخانات البيضاء) */
+    .reportview-container .main .block-container {
+        padding-top: 2rem;
+    }
+    
+    /* ستايل مخصص للكروت البيضاء */
+    .css-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-bottom: 2rem;
+        border: 1px solid #f1f5f9;
+    }
+
+    /* ستايل المبيعات والمصروفات */
+    [data-testid="stMetric"] {
+        background: white !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        padding: 15px !important;
+    }
+
+    /* تنسيق بادج البريميم بشكل "شيك" */
+    .premium-tag {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    
+    /* تعديل الأزرار */
+    .stButton>button {
+        width: 100%;
+        border-radius: 0.75rem;
+        height: 3rem;
+        background-color: #1e293b !important;
+        color: white !important;
+        font-weight: 600;
+        border: none !important;
+        transition: all 0.3s;
+    }
+    .stButton>button:hover {
+        background-color: #334155 !important;
+        transform: translateY(-2px);
+    }
+
+    /* إخفاء العلامات غير المرغوبة */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    </style>
     """, unsafe_allow_html=True)
 
 # --- تهيئة البيانات ---
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'user_role' not in st.session_state: st.session_state.user_role = None
-if 'sales_data' not in st.session_state: st.session_state.sales_data = []
-if 'expenses_data' not in st.session_state: st.session_state.expenses_data = []
+if 'sales' not in st.session_state: st.session_state.sales = []
+if 'expenses' not in st.session_state: st.session_state.expenses = []
 
 # ==========================================
-# واجهة الدخول (Login)
+# 🔐 واجهة تسجيل الدخول (Clean Login)
 # ==========================================
-def login():
-    st.markdown("<h1 style='text-align: center;'>🔐 SME Tax Calculator</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #666;'>Log in to manage your taxes professionally</p>", unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        with st.container():
-            st.markdown("---")
-            email = st.text_input("Email")
+if not st.session_state.logged_in:
+    _, center, _ = st.columns([1, 1.5, 1])
+    with center:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("""
+            <div style='text-align: center;'>
+                <h1 style='color: #1e293b; font-size: 2.5rem;'>SME Tax Expert</h1>
+                <p style='color: #64748b;'>The most trusted tax calculator in Egypt</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        with st.form("login"):
+            email = st.text_input("Username").strip().lower()
             password = st.text_input("Password", type="password")
-            submit = st.button("Access Dashboard", use_container_width=True)
-            
-            if submit:
-                u, p = email.strip().lower(), password.strip()
-                if u == "free_admin" and p == "free_admin":
+            if st.form_submit_button("Sign In"):
+                if email == "free_admin" and password == "free_admin":
                     st.session_state.logged_in, st.session_state.user_role = True, "free"
                     st.rerun()
-                elif u == "premium_admin" and p == "premium_admin":
+                elif email == "premium_admin" and password == "premium_admin":
                     st.session_state.logged_in, st.session_state.user_role = True, "premium"
                     st.rerun()
                 else:
-                    st.error("Wrong credentials. Please try again.")
+                    st.error("Invalid credentials")
 
 # ==========================================
-# التطبيق الرئيسي
+# 🚀 التطبيق الرئيسي (The Dashboard)
 # ==========================================
-if not st.session_state.logged_in:
-    login()
 else:
-    apply_custom_style(st.session_state.user_role)
-    
     # Sidebar
-    st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", width=80)
+    st.sidebar.markdown("<br>", unsafe_allow_html=True)
+    st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", width=70)
     
     if st.session_state.user_role == "premium":
-        st.sidebar.markdown('<div class="premium-badge">💎 PREMIUM ACCOUNT</div>', unsafe_allow_html=True)
+        st.sidebar.markdown('<div class="premium-tag">💎 PREMIUM USER</div>', unsafe_allow_html=True)
     else:
-        st.sidebar.markdown('<div style="text-align:center; color:#666; margin-bottom:20px;">STANDARD ACCOUNT</div>', unsafe_allow_html=True)
+        st.sidebar.markdown('<div style="background:#f1f5f9; padding:10px; border-radius:10px; text-align:center; font-size:12px; font-weight:bold; color:#64748b; margin-bottom:20px;">STANDARD ACCOUNT</div>', unsafe_allow_html=True)
 
-    # تم تبسيط الأسماء لضمان ظهورها
-    menu_options = {
-        "Sales": "🛒 Sales & Invoicing",
-        "Expenses": "💸 Operating Expenses",
-        "Reports": "📊 Tax Dashboard",
-        "Team": "👥 Team & Objectives"
-    }
+    choice = st.sidebar.radio("MAIN NAVIGATION", [
+        "📊 Dashboard Home",
+        "🛒 Sales Management",
+        "💸 Expense Tracking",
+        "👥 Team & Legal"
+    ])
     
-    choice = st.sidebar.radio("Main Menu", list(menu_options.values()))
-    
-    st.sidebar.markdown("---")
-    if st.sidebar.button("Log Out 🚪", use_container_width=True):
+    st.sidebar.markdown("<br><br><br>", unsafe_allow_html=True)
+    if st.sidebar.button("Log Out 🚪"):
         st.session_state.logged_in = False
         st.rerun()
 
-    # --- الحسابات ---
-    def get_tax_report(rev, exp):
-        profit = rev - exp
-        # القانون 152
-        if rev < 250000: t152 = 1000
-        elif rev < 500000: t152 = 2500
-        elif rev < 1000000: t152 = 5000
-        elif rev < 2000000: t152 = rev * 0.005
-        elif rev < 3000000: t152 = rev * 0.0075
-        else: t152 = rev * 0.01
-        return t152, max(0, profit * 0.225)
-
-    # --- الصفحات ---
-    if choice == menu_options["Sales"]:
+    # --- صفحات التطبيق ---
+    if choice == "🛒 Sales Management":
         st.title("🛒 Sales Management")
+        st.markdown("<p style='color:#64748b'>Record and track your business invoices.</p>", unsafe_allow_html=True)
+        
         with st.container():
-            c1, c2 = st.columns(2)
-            client = c1.text_input("Client")
-            amount = c2.number_input("Amount (EGP)", min_value=0.0)
-            if st.button("Add Record ✅", use_container_width=True):
-                if amount > 0: st.session_state.sales_data.append({"Client": client, "Amount": amount})
+            col1, col2 = st.columns([2, 1])
+            client = col1.text_input("Client/Invoice Detail")
+            amt = col2.number_input("Amount (EGP)", min_value=0.0)
+            if st.button("Add Record to Ledger"):
+                if amt > 0: 
+                    st.session_state.sales.append({"Client": client, "Amount": amt})
+                    st.success("Invoice added!")
         
-        if st.session_state.sales_data:
-            st.table(pd.DataFrame(st.session_state.sales_data))
+        if st.session_state.sales:
+            st.markdown("### Transaction History")
+            st.dataframe(pd.DataFrame(st.session_state.sales), use_container_width=True)
 
-    elif choice == menu_options["Expenses"]:
-        st.title("💸 Expenses Management")
-        with st.container():
-            item = st.text_input("Expense Item")
-            cost = st.number_input("Cost (EGP)", min_value=0.0)
-            if st.button("Record Expense 💾", use_container_width=True):
-                if cost > 0: st.session_state.expenses_data.append({"Item": item, "Cost": cost})
+    elif choice == "💸 Expense Tracking":
+        st.title("💸 Expense Management")
+        with st.form("exp"):
+            it = st.text_input("Expense Description")
+            ct = st.number_input("Cost (EGP)", min_value=0.0)
+            if st.form_submit_button("Record Expense"):
+                if ct > 0: st.session_state.expenses.append({"Item": it, "Cost": ct})
         
-        if st.session_state.expenses_data:
-            st.table(pd.DataFrame(st.session_state.expenses_data))
+        if st.session_state.expenses:
+            st.dataframe(pd.DataFrame(st.session_state.expenses), use_container_width=True)
 
-    elif choice == menu_options["Reports"]:
-        st.title("📊 Financial Intelligence Dashboard")
-        rev = sum(d['Amount'] for d in st.session_state.sales_data)
-        exp = sum(d['Cost'] for d in st.session_state.expenses_data)
+    elif choice == "📊 Dashboard Home":
+        st.title("📊 Financial Intelligence")
         
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Revenue", f"{rev:,.2f} EGP")
-        m2.metric("Expenses", f"{exp:,.2f} EGP")
-        m3.metric("Net Profit", f"{rev - exp:,.2f} EGP")
-
-        st.markdown("### Estimated Taxes")
-        t152, t91 = get_chat_response = get_tax_report(rev, exp)
+        rev = sum(d['Amount'] for d in st.session_state.sales)
+        exp = sum(d['Cost'] for d in st.session_state.expenses)
+        profit = rev - exp
         
-        c_a, c_b = st.columns(2)
-        c_a.success(f"Law 152: {t152:,.2f} EGP")
-        c_b.warning(f"Law 91: {t91:,.2f} EGP")
+        # Metrics Row
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Gross Revenue", f"{rev:,.0f} EGP")
+        c2.metric("Operating Costs", f"{exp:,.0f} EGP")
+        c3.metric("Net Profit", f"{profit:,.0f} EGP", delta=f"{profit:,.0f}")
 
         st.markdown("---")
-        if st.session_state.user_role == "premium":
-            st.info("💎 Premium Feature: You can download the full PDF/Text report.")
-            st.download_button("📥 Download Official Report", data=f"Revenue: {rev}, Profit: {rev-exp}", file_name="Report.txt")
-        else:
-            st.error("🚫 Report download is locked for Free accounts. Contact admin for Premium.")
+        st.subheader("Tax Projections")
+        
+        # Tax Logic
+        t152 = 1000 if rev < 250000 else 2500 if rev < 500000 else 5000 if rev < 1000000 else rev*0.01
+        t91 = max(0, profit * 0.225)
+        
+        tx1, tx2 = st.columns(2)
+        with tx1:
+            st.info(f"**Law 152 (SMEs)**\n\nEstimated Tax: **{t152:,.2f} EGP**")
+        with tx2:
+            st.warning(f"**Law 91 (Income Tax)**\n\nEstimated Tax: **{t91:,.2f} EGP**")
 
-    # هذه هي الصفحة التي كانت تختفي، تم التأكد من ربطها بالقاموس (Dictionary)
-    elif choice == menu_options["Team"]:
-        st.title("👥 Team & Objectives")
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.session_state.user_role == "premium":
+            st.download_button("📥 Generate Official PDF Report", data="Report Content", file_name="SME_Tax_Report.txt")
+        else:
+            st.error("🔒 The 'Official Report Download' is a Premium Feature. Please upgrade to unlock.")
+
+    elif choice == "👥 Team & Legal":
+        st.title("👥 Project Information")
         
-        st.subheader("Project Mission")
-        st.markdown("""
-        Digitizing the Egyptian tax system for SMEs to align with **Egypt Vision 2030**.
-        Our tool ensures accuracy, legality, and ease of use.
-        """)
-        
-        st.subheader("Our Team")
+        st.markdown("### Team Members")
         team = pd.DataFrame({
-            "Member Name": ["Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"],
-            "Student ID": ["2202297", "2200216", "2200243", "2200236", "2200190", "2202312", "2200137", "2200176", "2202995"]
+            "Full Name": ["Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"],
+            "ID": ["2202297", "2200216", "2200243", "2200236", "2200190", "2202312", "2200137", "2200176", "2202995"]
         })
         st.table(team)
         
-        st.info("⚠️ All calculations are strictly based on the Egyptian Tax Authority standards (Law 152/2020 & 91/2005).")
+        st.markdown("---")
+        st.markdown("""
+        **Project Objectives:** Digitalizing tax awareness for SMEs in Egypt, facilitating accurate calculation according to **Law 152/2020** and **Law 91/2005**.
+        """)
