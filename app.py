@@ -4,6 +4,7 @@ import google.generativeai as genai
 import os
 
 # 1. AI Configuration
+# تجنب الـ v1beta وحل مشكلة الـ 404 نهائياً
 os.environ["GOOGLE_API_USE_MTLS"] = "never"
 genai.configure(api_key="AIzaSyCULRB3xyOnO9f87qoUVYsSUhqa9yrQRNE")
 
@@ -120,46 +121,52 @@ elif page == "3. Tax Dashboard & Report":
             
             if tax_152 > 0:
                 st.success(f"Tax Due: EGP {tax_152:,.2f}")
-                st.write(f"Calculation Basis: {desc_152}")
+                st.write(f"Logic: {desc_152}")
+            st.caption("Reference: Law 152/2020 Art. 93-94")
 
     with tab2:
         st.info("ℹ️ Explanation: Standard Corporate Tax (22.5% of Net Profit).")
+        st.markdown(r"Tax = (Revenue - Expenses) $\times$ 22.5%")
         tax_91 = max(0, net_profit * 0.225)
         st.warning(f"Tax Due: EGP {tax_91:,.2f}")
+        st.caption("Reference: Law 91/2005")
 
 # ==========================
 # 4. Smart Tax Assistant
 # ==========================
 elif page == "4. Smart Tax Assistant 🤖":
     st.header("Smart Tax Assistant 🤖")
-    st.write("Welcome! I'm your English-speaking tax expert.")
+    st.write("Welcome! I'm your tax expert. Ask me anything in English.")
 
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
-    if prompt := st.chat_input("Ask about Egyptian Tax Laws..."):
+    if prompt := st.chat_input("Ask your tax question here..."):
         with st.chat_message("user"): st.markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         with st.chat_message("assistant"):
             try:
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                response = model.generate_content(f"Answer in English as an Egyptian tax expert for SMEs: {prompt}")
+                # محاولة استخدام الموديل بالاسم الكامل لضمان التشغيل
+                model = genai.GenerativeModel('models/gemini-pro')
+                response = model.generate_content(f"Respond in English as an Egyptian tax expert: {prompt}")
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
-                st.error(f"Connection Error: {e}")
+                st.error(f"AI Connection Error: {e}")
 
 # ==========================
-# 5. About Page
+# 5. About the Project
 # ==========================
 elif page == "5. About the Project":
     st.title("About SME Tax Expert")
-    st.markdown("### Graduation Project - Team Members")
+    st.markdown("### Graduation Project Team")
     
     team_data = {
         "Name": ["Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"],
         "ID": ["2202297", "2200216", "2200243", "2200236", "2200190", "2202312", "2200137", "2200176", "2202995"]
     }
     st.table(pd.DataFrame(team_data))
-    st.caption("All Rights Reserved - 2026")
+    st.divider()
+    st.markdown("**Objective:** Helping SMEs calculate taxes according to Egyptian Law 91 & 152.")
+    st.caption("Project Year: 2026")
