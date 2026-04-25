@@ -5,7 +5,7 @@ import google.generativeai as genai
 # 1. AI Configuration
 # REPLACE 'YOUR_NEW_API_KEY_HERE' with the new key you just created
 genai.configure(api_key="AIzaSyCULRB3xyOnO9f87qoUVYsSUhqa9yrQRNE")
-model = genai.GenerativeModel('models/gemini-1.5-flash')# 2. Page Configuration & Styling
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
 
 # --- Database Simulation (Session State) ---
