@@ -4,7 +4,7 @@ import google.generativeai as genai
 
 # 1. AI Configuration
 # Note: Ensure this API key is active in Google AI Studio
-genai.configure(api_key="AIzaSyDOXiay17VknR2XXq6ZFYe3oKY-N9cmKzQ")
+genai.configure(api_key="AIzaSyCULRB3xyOnO9f87qoUVYsSUhqa9yrQRNE")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # 2. Page Configuration & Styling
@@ -169,8 +169,8 @@ elif page == "4. Smart Tax Assistant 🤖":
                 full_response = response.text
                 st.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
-            except Exception as e:
-                st.error("Connection error. Please check your API Key.")
+           except Exception as e:
+                st.error(f"AI Connection Error: {e}")
 
 # ==========================
 # 5. About Page (Now #5 & Updated Team)
