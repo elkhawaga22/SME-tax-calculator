@@ -3,9 +3,9 @@ import pandas as pd
 import requests
 
 # 1. Configuration
-# تم وضع المفتاح الخاص بك والربط المباشر بـ v1 لتجنب الـ 404
+# تم التحديث إلى النسخة المستقرة gemini-1.5-flash وإصدار v1beta لضمان التوافق
 API_KEY = "AIzaSyDJpTMxu40h_WiDyJZ_WB8TQD2xFmFRnEU"
-API_URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-exp:generateContent?key={API_KEY}"
+API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
 
 # 2. Page Configuration & Styling
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
@@ -84,7 +84,7 @@ elif page == "3. Tax Dashboard & Report":
         st.warning(f"Estimated Tax: EGP {tax_91:,.2f}")
 
 # ==========================
-# 4. Smart Tax Assistant (NO MORE 404 ERROR)
+# 4. Smart Tax Assistant
 # ==========================
 elif page == "4. Smart Tax Assistant 🤖":
     st.header("Smart Tax Assistant 🤖")
@@ -99,20 +99,19 @@ elif page == "4. Smart Tax Assistant 🤖":
 
         with st.chat_message("assistant"):
             try:
-                # إرسال الطلب مباشرة بدون استخدام مكتبة genai المسببة للمشاكل
                 payload = {
                     "contents": [{"parts": [{"text": f"You are an Egyptian tax expert for SMEs. Answer professionally in English: {prompt}"}]}]
                 }
                 response = requests.post(API_URL, json=payload)
                 response_data = response.json()
                 
-                # استخراج النص من رد جوجل
                 if "candidates" in response_data:
                     answer = response_data['candidates'][0]['content']['parts'][0]['text']
                     st.markdown(answer)
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                 else:
-                    st.error(f"AI Error: {response_data.get('error', {}).get('message', 'Unknown error')}")
+                    error_msg = response_data.get('error', {}).get('message', 'Unknown error')
+                    st.error(f"AI Error: {error_msg}")
             except Exception as e:
                 st.error(f"Connection Error: {e}")
 
