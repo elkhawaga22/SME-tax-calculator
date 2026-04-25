@@ -3,11 +3,11 @@ import pandas as pd
 import requests
 
 # ==========================
-# 1. Configuration
+# CONFIG
 # ==========================
 API_KEY = st.secrets["API_KEY"]
 
-API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+API_URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={API_KEY}"
 
 HEADERS = {
     "Content-Type": "application/json"
@@ -16,7 +16,7 @@ HEADERS = {
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
 
 # ==========================
-# Session State
+# SESSION STATE
 # ==========================
 if 'sales_data' not in st.session_state:
     st.session_state.sales_data = []
@@ -28,7 +28,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # ==========================
-# Sidebar
+# SIDEBAR
 # ==========================
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", width=80)
 st.sidebar.title("SME Tax Expert")
@@ -43,7 +43,7 @@ page = st.sidebar.radio("Navigation", [
 ])
 
 # ==========================
-# 1. Sales Module
+# 1. SALES
 # ==========================
 if page == "1. Sales & Invoicing":
     st.title("🛒 Sales Management Module")
@@ -66,7 +66,7 @@ if page == "1. Sales & Invoicing":
         st.metric("Total Revenue", f"EGP {df_sales['Amount'].sum():,.2f}")
 
 # ==========================
-# 2. Expenses Module
+# 2. EXPENSES
 # ==========================
 elif page == "2. Operating Expenses":
     st.title("💸 Expense Management Module")
@@ -88,7 +88,7 @@ elif page == "2. Operating Expenses":
         st.dataframe(df_exp, use_container_width=True)
 
 # ==========================
-# 3. Dashboard
+# 3. DASHBOARD
 # ==========================
 elif page == "3. Tax Dashboard & Report":
     st.title("📊 Financial & Tax Report")
@@ -113,7 +113,7 @@ elif page == "3. Tax Dashboard & Report":
         st.warning(f"Estimated Tax: EGP {tax_91:,.2f}")
 
 # ==========================
-# 4. AI Assistant
+# 4. AI ASSISTANT
 # ==========================
 elif page == "4. Smart Tax Assistant 🤖":
     st.header("Smart Tax Assistant 🤖")
@@ -152,6 +152,7 @@ elif page == "4. Smart Tax Assistant 🤖":
 
                 if response.status_code == 200:
                     data = response.json()
+
                     try:
                         answer = data['candidates'][0]['content']['parts'][0]['text']
                     except:
@@ -168,7 +169,7 @@ elif page == "4. Smart Tax Assistant 🤖":
                 st.error(f"Connection Error: {e}")
 
 # ==========================
-# 5. About
+# 5. ABOUT
 # ==========================
 elif page == "5. About the Project":
     st.title("About the Project")
