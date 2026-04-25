@@ -1,37 +1,34 @@
-import streamlit as st
-import pandas as pd
 import requests
+import json
 
-# --- 1. Configuration ---
 API_KEY = "AIzaSyCULRB3xyOnO9f87qoUVYsSUhqa9yrQRNE"
 
-# --- 2. Page Config ---
-st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
+# اختبار الموديلات المتاحة
+models_to_test = [
+    "gemini-pro",
+    "gemini-1.0-pro",
+    "gemini-pro-vision",
+    "gemini-1.0-pro-vision-001"
+]
 
-if 'sales_data' not in st.session_state: st.session_state.sales_data = []
-if 'expenses_data' not in st.session_state: st.session_state.expenses_data = []
-if "messages" not in st.session_state: st.session_state.messages = []
+print("🔍 Testing your API Key and available models...\n")
 
-# --- Sidebar ---
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", width=80)
-st.sidebar.title("SME Tax Expert")
-st.sidebar.markdown("Graduation Project 2026") 
+for model in models_to_test:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={API_KEY}"
+    payload = {
+        "contents": [{"parts": [{"text": "Say hello"}]}],
+        "generationConfig": {"temperature": 0.1}
+    }
+    
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        print(f"✅ {model}: OK ({response.status_code})")
+        if response.status_code == 200:
+            result = response.json()
+            print(f"   Response: {result['candidates'][0]['content']['parts'][0]['text'][:50]}...")
+        print()
+    except Exception as e:
+        print(f"❌ {model}: FAILED - {str(e)[:100]}")
+        print()
 
-page = st.sidebar.radio("Navigation", [
-    "1. Sales & Invoicing", 
-    "2. Operating Expenses", 
-    "3. Tax Dashboard & Report",
-    "4. Smart Tax Assistant 🤖",
-    "5. About the Project"
-])
-
-# ==========================
-# 1. Sales Module (نفس الكود)
-# ==========================
-if page == "1. Sales & Invoicing":
-    st.title("🛒 Sales Management Module")
-    with st.form("add_sale"):
-        c1, c2 = st.columns(2)
-        client = c1.text_input("Client Name")
-        amt = c2.number_input("Invoice Amount (EGP)", min_value=0.0)
-        if st.form_submit_button
+print("🎯 Copy the WORKING model name to your main app!")
