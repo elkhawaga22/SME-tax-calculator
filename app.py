@@ -3,9 +3,9 @@ import pandas as pd
 import requests
 
 # 1. Configuration
-# تم التحديث إلى النسخة المستقرة gemini-1.5-flash وإصدار v1beta لضمان التوافق
+# تم استخدام gemini-1.5-flash-latest لضمان استقرار الاتصال بالـ API
 API_KEY = "AIzaSyDJpTMxu40h_WiDyJZ_WB8TQD2xFmFRnEU"
-API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={API_KEY}"
 
 # 2. Page Configuration & Styling
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
@@ -110,8 +110,8 @@ elif page == "4. Smart Tax Assistant 🤖":
                     st.markdown(answer)
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                 else:
-                    error_msg = response_data.get('error', {}).get('message', 'Unknown error')
-                    st.error(f"AI Error: {error_msg}")
+                    error_info = response_data.get('error', {}).get('message', 'Unknown AI Error')
+                    st.error(f"AI Error: {error_info}")
             except Exception as e:
                 st.error(f"Connection Error: {e}")
 
