@@ -6,7 +6,8 @@ import requests
 # الـ Key بتاعك اللي بعتهولي
 API_KEY = "AIzaSyCULRB3xyOnO9f87qoUVYsSUhqa9yrQRNE"
 # الرابط ده بيستخدم v1beta عشان يضمن وصول الـ Flash model
-API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
+API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+
 # --- 2. Page Config ---
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
 
