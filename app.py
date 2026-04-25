@@ -4,10 +4,12 @@ import google.generativeai as genai
 
 # 1. AI Configuration
 # Updated with your active API Key and stable transport method
+# 1. AI Configuration
+# هنا هنحدد الإصدار v1 بشكل صريح في الرابط عشان نهرب من مشكلة الـ v1beta
 genai.configure(api_key="AIzaSyCULRB3xyOnO9f87qoUVYsSUhqa9yrQRNE", transport='rest')
-model = genai.GenerativeModel('gemini-1.5-flash')
 
-# 2. Page Configuration & Styling
+# هنستخدم اسم الموديل الكامل "models/gemini-1.5-flash"
+model = genai.GenerativeModel(model_name='models/gemini-1.5-flash')
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
 
 # --- Database Simulation (Session State) ---
