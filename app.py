@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import io
 
 # 1. إعدادات الصفحة العامة
 st.set_page_config(
@@ -9,7 +8,7 @@ st.set_page_config(
     page_icon="🇪🇬"
 )
 
-# تخصيص واجهة المستخدم بـ CSS بسيط لتحسين المظهر
+# تخصيص واجهة المستخدم - تم تصحيح السطر هنا
 st.markdown("""
     <style>
     .main {
@@ -22,7 +21,7 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     </style>
-    """, unsafe_allow_name=True)
+    """, unsafe_allow_html=True)
 
 # --- تهيئة البيانات (Session State) ---
 if 'sales_data' not in st.session_state: st.session_state.sales_data = []
@@ -82,18 +81,17 @@ if menu == "🛒 تسجيل المبيعات":
     st.title("🛒 إدارة الفواتير والمبيعات")
     st.info("قم بتسجيل كافة مبيعات المنشأة خلال الفترة الضريبية.")
     
-    with st.container():
-        with st.form("sales_form", clear_on_submit=True):
-            col1, col2 = st.columns(2)
-            client = col1.text_input("اسم العميل / رقم الفاتورة")
-            amount = col2.number_input("قيمة الفاتورة (ج.م)", min_value=0.0, format="%.2f")
-            
-            if st.form_submit_button("إضافة الفاتورة ✅"):
-                if amount > 0:
-                    st.session_state.sales_data.append({"البيان": client, "المبلغ": amount})
-                    st.success("تم تسجيل الفاتورة بنجاح")
-                else:
-                    st.error("يرجى إدخال مبلغ صحيح")
+    with st.form("sales_form", clear_on_submit=True):
+        col1, col2 = st.columns(2)
+        client = col1.text_input("اسم العميل / رقم الفاتورة")
+        amount = col2.number_input("قيمة الفاتورة (ج.م)", min_value=0.0, format="%.2f")
+        
+        if st.form_submit_button("إضافة الفاتورة ✅"):
+            if amount > 0:
+                st.session_state.sales_data.append({"البيان": client, "المبلغ": amount})
+                st.success("تم تسجيل الفاتورة بنجاح")
+            else:
+                st.error("يرجى إدخال مبلغ صحيح")
 
     if st.session_state.sales_data:
         st.markdown("### سجل المبيعات الحالي")
@@ -134,16 +132,14 @@ elif menu == "📊 لوحة التقارير والضرائب":
     total_exp = sum(d['التكلفة'] for d in st.session_state.expenses_data)
     net_profit = total_rev - total_exp
     
-    # عرض المؤشرات المالية الأساسية
     st.markdown("### ملخص الأداء المالي")
     m1, m2, m3 = st.columns(3)
     m1.metric("إجمالي الإيرادات", f"{total_rev:,.2f} ج.م")
     m2.metric("إجمالي المصروفات", f"{total_exp:,.2f} ج.م")
-    m3.metric("صافي الربح/الخسارة", f"{net_profit:,.2f} ج.م", delta=f"{net_profit:,.2f}")
+    m3.metric("صافي الربح/الخسارة", f"{net_profit:,.2f} ج.م")
 
     st.markdown("---")
     
-    # حساب الضرائب وعرضها
     tax_152, note_152, tax_91, note_91 = calculate_taxes(total_rev, total_exp)
     
     st.markdown("### المقارنة الضريبية (طبقاً للتشريعات المصرية)")
@@ -159,7 +155,6 @@ elif menu == "📊 لوحة التقارير والضرائب":
         st.warning(f"الضريبة المستحقة: {tax_91:,.2f} ج.م")
         st.caption(f"الأساس: {note_91}")
 
-    # ميزة تحميل التقرير
     full_report = f"""
     === تقرير SME Tax Expert المالي 2026 ===
     إجمالي الإيرادات: {total_rev:,.2f} ج.م
@@ -182,12 +177,11 @@ elif menu == "📊 لوحة التقارير والضرائب":
     )
 
 # ==========================================
-# 4. صفحة فريق العمل والأهداف (المكان المطلوب)
+# 4. صفحة فريق العمل والأهداف
 # ==========================================
 elif menu == "👥 فريق العمل والأهداف":
     st.title("👥 فريق عمل المشروع")
     
-    # عرض فريق العمل في جدول منظم
     team_data = {
         "الاسم الكامل": [
             "Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", 
@@ -203,8 +197,6 @@ elif menu == "👥 فريق العمل والأهداف":
     st.table(pd.DataFrame(team_data))
     
     st.markdown("---")
-    
-    # أهداف المشروع (كما طلبت في نهاية الصفحة)
     st.header("🎯 أهداف المشروع")
     st.markdown("""
     1. **التحول الرقمي:** المساهمة في رؤية مصر 2030 من خلال رقمنة العمليات المحاسبية للمشروعات الصغيرة.
@@ -213,7 +205,6 @@ elif menu == "👥 فريق العمل والأهداف":
     4. **التوعية الضريبية:** تبسيط القوانين المصرية (152 و 91) للمستخدم العادي.
     """)
     
-    # الإخلاء القانوني والتبعية لمصلحة الضرائب
     st.markdown("---")
     st.subheader("⚖️ مرجعية النظام")
     st.info("""
