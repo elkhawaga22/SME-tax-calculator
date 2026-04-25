@@ -3,7 +3,7 @@ import pandas as pd
 import google.generativeai as genai
 
 # 1. الإعداد الأساسي بمفتاحك الجديد
-API_KEY = "AIzaSyACmy1UgjAVZBpf1sxPAvm0vap8cF_n08Q"
+API_KEY = "AIzaSyD7FvVcME2hyYWrLT31u3Ufdeoc3LjjYfQ"
 
 def setup_model():
     try:
