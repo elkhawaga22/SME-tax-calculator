@@ -2,140 +2,223 @@ import streamlit as st
 import pandas as pd
 import io
 
-# 1. إعدادات الصفحة
-st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
+# 1. إعدادات الصفحة العامة
+st.set_page_config(
+    page_title="SME Tax Expert 2026",
+    layout="wide",
+    page_icon="🇪🇬"
+)
 
-# --- تهيئة مخزن البيانات (Session State) ---
+# تخصيص واجهة المستخدم بـ CSS بسيط لتحسين المظهر
+st.markdown("""
+    <style>
+    .main {
+        background-color: #f8f9fa;
+    }
+    .stMetric {
+        background-color: #ffffff;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    </style>
+    """, unsafe_allow_name=True)
+
+# --- تهيئة البيانات (Session State) ---
 if 'sales_data' not in st.session_state: st.session_state.sales_data = []
 if 'expenses_data' not in st.session_state: st.session_state.expenses_data = []
 
-# --- القائمة الجانبية (Sidebar) ---
-st.sidebar.title("🏢 SME Tax Expert")
-st.sidebar.markdown("**Graduation Project 2026**") 
+# ==========================================
+# محرك الحسابات الضريبية (Tax Engine)
+# ==========================================
 
-page = st.sidebar.radio("Navigation", [
-    "🏠 Project Overview",
-    "🛒 Sales & Invoicing", 
-    "💸 Operating Expenses", 
-    "📊 Tax Dashboard & Report",
-    "👥 About the Team"
+def calculate_taxes(revenue, expenses):
+    profit = revenue - expenses
+    
+    # حساب قانون 152 (حسب حجم الأعمال)
+    if revenue < 250000:
+        tax_152 = 1000
+        note_152 = "ضريبة قطعية: 1,000 ج.م سنويًا"
+    elif revenue < 500000:
+        tax_152 = 2500
+        note_152 = "ضريبة قطعية: 2,500 ج.م سنويًا"
+    elif revenue < 1000000:
+        tax_152 = 5000
+        note_152 = "ضريبة قطعية: 5,000 ج.م سنويًا"
+    elif revenue < 2000000:
+        tax_152 = revenue * 0.005
+        note_152 = "نسبة 0.5% من حجم الأعمال"
+    elif revenue < 3000000:
+        tax_152 = revenue * 0.0075
+        note_152 = "نسبة 0.75% من حجم الأعمال"
+    else:
+        tax_152 = revenue * 0.01
+        note_152 = "نسبة 1.0% من حجم الأعمال"
+
+    # حساب قانون 91 (22.5% من صافي الربح)
+    tax_91 = max(0, profit * 0.225)
+    note_91 = "نسبة 22.5% من صافي الأرباح التجارية"
+    
+    return tax_152, note_152, tax_91, note_91
+
+# ==========================================
+# القائمة الجانبية (Sidebar)
+# ==========================================
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", width=100)
+st.sidebar.title("SME Tax Expert")
+st.sidebar.markdown("---")
+
+menu = st.sidebar.radio("القائمة الرئيسية", [
+    "🛒 تسجيل المبيعات",
+    "💸 تسجيل المصروفات",
+    "📊 لوحة التقارير والضرائب",
+    "👥 فريق العمل والأهداف"
 ])
 
 # ==========================================
-# 0. Project Overview & Goals
+# 1. صفحة المبيعات
 # ==========================================
-if page == "🏠 Project Overview":
-    st.title("🇪🇬 Digital Transformation in Egyptian Taxation")
-    st.subheader("Project Objectives")
-    st.markdown("""
-    * **Automation:** Simplifying complex tax calculations for Small and Medium Enterprises (SMEs).
-    * **Accuracy:** Reducing human error in determining tax brackets according to Egyptian law.
-    * **Awareness:** Helping business owners understand the difference between Law 152 and Law 91.
-    * **Digitalization:** Aligning with Egypt's Vision 2030 for digital financial services.
-    """)
+if menu == "🛒 تسجيل المبيعات":
+    st.title("🛒 إدارة الفواتير والمبيعات")
+    st.info("قم بتسجيل كافة مبيعات المنشأة خلال الفترة الضريبية.")
     
-    st.warning("""
-    ⚠️ **Legal Disclaimer:** All calculations provided by this application are based on the **Egyptian Tax Law No. 152 of 2020** (for SMEs) and **Law No. 91 of 2005** (Income Tax). Please consult a certified public accountant for official filing.
-    """)
+    with st.container():
+        with st.form("sales_form", clear_on_submit=True):
+            col1, col2 = st.columns(2)
+            client = col1.text_input("اسم العميل / رقم الفاتورة")
+            amount = col2.number_input("قيمة الفاتورة (ج.م)", min_value=0.0, format="%.2f")
+            
+            if st.form_submit_button("إضافة الفاتورة ✅"):
+                if amount > 0:
+                    st.session_state.sales_data.append({"البيان": client, "المبلغ": amount})
+                    st.success("تم تسجيل الفاتورة بنجاح")
+                else:
+                    st.error("يرجى إدخال مبلغ صحيح")
 
-# ==========================================
-# 1. Sales Module
-# ==========================================
-elif page == "🛒 Sales & Invoicing":
-    st.title("🛒 Sales Management")
-    with st.form("add_sale"):
-        col1, col2 = st.columns(2)
-        client = col1.text_input("Client Name")
-        amount = col2.number_input("Invoice Amount (EGP)", min_value=0.0)
-        if st.form_submit_button("💾 Save Invoice") and amount > 0:
-            st.session_state.sales_data.append({"Client": client, "Amount": amount})
-            st.success("Invoice saved successfully! ✅")
-    
     if st.session_state.sales_data:
-        st.dataframe(pd.DataFrame(st.session_state.sales_data), use_container_width=True)
+        st.markdown("### سجل المبيعات الحالي")
+        df_sales = pd.DataFrame(st.session_state.sales_data)
+        st.table(df_sales)
+        st.metric("إجمالي الإيرادات", f"{df_sales['المبلغ'].sum():,.2f} ج.م")
 
 # ==========================================
-# 2. Expenses Module
+# 2. صفحة المصروفات
 # ==========================================
-elif page == "💸 Operating Expenses":
-    st.title("💸 Expense Management")
-    with st.form("add_exp"):
+elif menu == "💸 تسجيل المصروفات":
+    st.title("💸 إدارة المصروفات التشغيلية")
+    st.info("سجل كافة التكاليف والمصروفات الإدارية والعمومية المرتبطة بالنشاط.")
+    
+    with st.form("expenses_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
-        item = col1.text_input("Expense Item")
-        cost = col2.number_input("Cost (EGP)", min_value=0.0)
-        if st.form_submit_button("💾 Record Expense") and cost > 0:
-            st.session_state.expenses_data.append({"Item": item, "Cost": cost})
-            st.success("Expense recorded! ✅")
-    
+        item = col1.text_input("بند المصروف (إيجار، أجور، كهرباء...)")
+        cost = col2.number_input("التكلفة (ج.م)", min_value=0.0, format="%.2f")
+        
+        if st.form_submit_button("تسجيل المصروف 💾"):
+            if cost > 0:
+                st.session_state.expenses_data.append({"البند": item, "التكلفة": cost})
+                st.success("تم تسجيل المصروف بنجاح")
+
     if st.session_state.expenses_data:
-        st.dataframe(pd.DataFrame(st.session_state.expenses_data), use_container_width=True)
+        st.markdown("### سجل المصروفات الحالي")
+        df_expenses = pd.DataFrame(st.session_state.expenses_data)
+        st.table(df_expenses)
+        st.metric("إجمالي المصروفات", f"{df_expenses['التكلفة'].sum():,.2f} ج.م")
 
 # ==========================================
-# 3. Tax Dashboard & Export Report
+# 3. صفحة التقارير والضرائب
 # ==========================================
-elif page == "3. Tax Dashboard & Report":
-    st.title("📊 Financial Summary & Tax Report")
+elif menu == "📊 لوحة التقارير والضرائب":
+    st.title("📊 التقرير المالي والضريبي الختامي")
     
-    total_sales = sum(item['Amount'] for item in st.session_state.sales_data)
-    total_expenses = sum(item['Cost'] for item in st.session_state.expenses_data)
-    net_profit = total_sales - total_expenses
+    total_rev = sum(d['المبلغ'] for d in st.session_state.sales_data)
+    total_exp = sum(d['التكلفة'] for d in st.session_state.expenses_data)
+    net_profit = total_rev - total_exp
     
-    # حساب الضريبة (قانون 152)
-    if total_sales < 250000: tax_152 = 1000
-    elif total_sales < 500000: tax_152 = 2500
-    elif total_sales < 1000000: tax_152 = 5000
-    elif total_sales < 2000000: tax_152 = total_sales * 0.005
-    elif total_sales < 3000000: tax_152 = total_sales * 0.0075
-    else: tax_152 = total_sales * 0.01
-
-    # حساب الضريبة (قانون 91)
-    tax_91 = max(0, net_profit * 0.225)
-
-    # عرض النتائج
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Revenue", f"{total_sales:,.2f} EGP")
-    c2.metric("Expenses", f"{total_expenses:,.2f} EGP")
-    c3.metric("Net Profit", f"{net_profit:,.2f} EGP")
+    # عرض المؤشرات المالية الأساسية
+    st.markdown("### ملخص الأداء المالي")
+    m1, m2, m3 = st.columns(3)
+    m1.metric("إجمالي الإيرادات", f"{total_rev:,.2f} ج.م")
+    m2.metric("إجمالي المصروفات", f"{total_exp:,.2f} ج.م")
+    m3.metric("صافي الربح/الخسارة", f"{net_profit:,.2f} ج.م", delta=f"{net_profit:,.2f}")
 
     st.markdown("---")
     
-    # خيار تحميل التقرير
-    report_text = f"""
-    SME TAX EXPERT REPORT - 2026
-    ----------------------------
-    Total Revenue: {total_sales:,.2f} EGP
-    Total Expenses: {total_expenses:,.2f} EGP
-    Net Profit: {net_profit:,.2f} EGP
+    # حساب الضرائب وعرضها
+    tax_152, note_152, tax_91, note_91 = calculate_taxes(total_rev, total_exp)
     
-    TAX CALCULATIONS (Based on Egyptian Law):
-    1. Law 152 (Simplified): {tax_152:,.2f} EGP
-    2. Law 91 (Standard 22.5%): {tax_91:,.2f} EGP
+    st.markdown("### المقارنة الضريبية (طبقاً للتشريعات المصرية)")
+    t1, t2 = st.columns(2)
     
-    *Disclaimer: This is a preliminary report based on provided data.*
+    with t1:
+        st.subheader("🏢 قانون 152 (المبسط)")
+        st.success(f"الضريبة المستحقة: {tax_152:,.2f} ج.م")
+        st.caption(f"الأساس: {note_152}")
+        
+    with t2:
+        st.subheader("📝 قانون 91 (الدخل)")
+        st.warning(f"الضريبة المستحقة: {tax_91:,.2f} ج.م")
+        st.caption(f"الأساس: {note_91}")
+
+    # ميزة تحميل التقرير
+    full_report = f"""
+    === تقرير SME Tax Expert المالي 2026 ===
+    إجمالي الإيرادات: {total_rev:,.2f} ج.م
+    إجمالي المصروفات: {total_exp:,.2f} ج.م
+    صافي الربح: {net_profit:,.2f} ج.م
+    ---------------------------------------
+    تحليل الضرائب المستحقة:
+    1. قانون 152 لعام 2020: {tax_152:,.2f} ج.م ({note_152})
+    2. قانون 91 لعام 2005: {tax_91:,.2f} ج.م ({note_91})
+    ---------------------------------------
+    * تم استخراج هذا التقرير طبقاً لمعايير مصلحة الضرائب المصرية *
     """
     
+    st.markdown("---")
     st.download_button(
-        label="📥 Download Full Financial Report",
-        data=report_text,
-        file_name="Tax_Report.txt",
+        label="📥 تحميل التقرير المالي كملف نصي",
+        data=full_report,
+        file_name="Tax_Full_Report.txt",
         mime="text/plain"
     )
 
-    tab1, tab2 = st.tabs(["🏢 Law 152 Analysis", "📝 Law 91 Analysis"])
-    with tab1:
-        st.success(f"Estimated Tax: EGP {tax_152:,.2f}")
-        st.write("**Note:** Under Law 152, tax is calculated on total volume, which is ideal for SMEs with high expenses.")
-    with tab2:
-        st.warning(f"Estimated Tax: EGP {tax_91:,.2f}")
-        st.write("**Note:** Under Law 91, tax is 22.5% of net profit after deducting all documented expenses.")
-
 # ==========================================
-# 4. About Page
+# 4. صفحة فريق العمل والأهداف (المكان المطلوب)
 # ==========================================
-elif page == "👥 About the Team":
-    st.title("Project Team")
+elif menu == "👥 فريق العمل والأهداف":
+    st.title("👥 فريق عمل المشروع")
+    
+    # عرض فريق العمل في جدول منظم
     team_data = {
-        "Name": ["Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"],
-        "ID": ["2202297", "2200216", "2200243", "2200236", "2200190", "2202312", "2200137", "2200176", "2202995"]
+        "الاسم الكامل": [
+            "Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", 
+            "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", 
+            "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"
+        ],
+        "كود الطالب": [
+            "2202297", "2200216", "2200243", 
+            "2200236", "2200190", "2202312", 
+            "2200137", "2200176", "2202995"
+        ]
     }
     st.table(pd.DataFrame(team_data))
+    
+    st.markdown("---")
+    
+    # أهداف المشروع (كما طلبت في نهاية الصفحة)
+    st.header("🎯 أهداف المشروع")
+    st.markdown("""
+    1. **التحول الرقمي:** المساهمة في رؤية مصر 2030 من خلال رقمنة العمليات المحاسبية للمشروعات الصغيرة.
+    2. **دعم اتخاذ القرار:** تمكين صاحب المشروع من المقارنة بين الأنظمة الضريبية المختلفة لاختيار الأنسب له.
+    3. **الدقة المحاسبية:** تقليل الأخطاء البشرية في حساب الشرائح الضريبية المعقدة.
+    4. **التوعية الضريبية:** تبسيط القوانين المصرية (152 و 91) للمستخدم العادي.
+    """)
+    
+    # الإخلاء القانوني والتبعية لمصلحة الضرائب
+    st.markdown("---")
+    st.subheader("⚖️ مرجعية النظام")
+    st.info("""
+    جميع المعادلات والموازين الضريبية المستخدمة في هذا النظام تم برمجتها وفقاً لآخر التحديثات الصادرة عن **مصلحة الضرائب المصرية**.
+    * **قانون رقم 152 لسنة 2020:** المنظم للمشروعات الصغيرة والمتوسطة.
+    * **قانون رقم 91 لسنة 2005:** وتعديلاته الخاصة بالضريبة على الدخل.
+    """)
+    st.caption("تم تطوير هذا العمل كمتطلب لمشروع التخرج لعام 2026.")
