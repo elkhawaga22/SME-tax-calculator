@@ -3,7 +3,7 @@ import pandas as pd
 import google.generativeai as genai
 
 # 1. Configuration & AI Setup
-API_KEY = "AIzaSyD7FvVcME2hyYWrLT31u3Ufdeoc3LjjYfQ"
+API_KEY = "hhhhhhhh"
 
 def load_reliable_model():
     try:
