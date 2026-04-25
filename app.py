@@ -2,11 +2,12 @@ import streamlit as st
 import pandas as pd
 import google.generativeai as genai
 
-# تم تعديل مكان المفتاح ليكون داخل علامات التنصيص
+# 1. AI Configuration
+# Note: Ensure this API key is active in Google AI Studio
 genai.configure(api_key="AIzaSyDOXiay17VknR2XXq6ZFYe3oKY-N9cmKzQ")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Page Configuration & Styling
+# 2. Page Configuration & Styling
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
 
 # --- Database Simulation (Session State) ---
@@ -20,13 +21,13 @@ st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", widt
 st.sidebar.title("SME Tax Expert")
 st.sidebar.markdown("Graduation Project 2026") 
 
-# تم إضافة الفاصلة هنا بعد About the Project
+# Reordered Navigation
 page = st.sidebar.radio("Navigation", [
     "1. Sales & Invoicing", 
     "2. Operating Expenses", 
     "3. Tax Dashboard & Report",
-    "4. About the Project",
-    "5. Smart Tax Assistant 🤖"
+    "4. Smart Tax Assistant 🤖",
+    "5. About the Project"
 ])
 
 # ==========================
@@ -87,12 +88,10 @@ elif page == "2. Operating Expenses":
 elif page == "3. Tax Dashboard & Report":
     st.title("📊 Financial & Tax Report")
     
-    # Auto-Calculation
     total_sales = sum(item['Amount'] for item in st.session_state.sales_data)
     total_expenses = sum(item['Cost'] for item in st.session_state.expenses_data)
     net_profit = total_sales - total_expenses
 
-    # 1. Financial Summary Cards
     st.markdown("### 💰 Financial Summary")
     c1, c2, c3 = st.columns(3)
     c1.metric("Total Revenue", f"EGP {total_sales:,.2f}", help="Gross Income from Sales")
@@ -100,19 +99,14 @@ elif page == "3. Tax Dashboard & Report":
     c3.metric("Net Profit", f"EGP {net_profit:,.2f}", delta_color="normal", help="Revenue - Expenses")
 
     st.divider()
-
-    # 2. Tax Calculation Area
     st.header("⚖️ Tax Liability Analysis")
     
     tab1, tab2 = st.tabs(["🏢 Simplified Regime (Law 152)", "📝 General Regime (Law 91)"])
 
-    # --- TAB 1: Simplified Regime ---
     with tab1:
         st.info("ℹ️ **Explanation:** This regime applies to SMEs with turnover < 10M EGP. It uses fixed amounts or flat rates on *Revenue*.")
-        
         tax_152 = 0
         desc_152 = ""
-        
         if total_sales == 0:
             st.warning("Please record sales to view tax.")
         else:
@@ -130,104 +124,90 @@ elif page == "3. Tax Dashboard & Report":
             else:
                 st.error("Not Applicable (Turnover exceeds 10M EGP)")
 
-    # --- TAB 2: General Regime ---
     with tab2:
-        st.info("ℹ️ **Explanation:** This is the standard Corporate Income Tax. It is calculated on *Net Profit* (Revenue - Expenses).")
+        st.info("ℹ️ **Explanation:** This is the standard Corporate Income Tax. It is calculated on *Net Profit*.")
         st.markdown(r"Tax = (Revenue - Expenses) $\times$ 22.5%")
-        
         tax_91 = max(0, net_profit * 0.225)
-        
         st.warning(f"**Tax Due:** EGP {tax_91:,.2f}")
         st.write(f"**Tax Base (Net Profit):** EGP {net_profit:,.2f}")
         st.caption("Reference: Law 91/2005")
 
     st.divider()
-    
-    # 3. Smart Recommendation
     if total_sales > 0:
         st.subheader("💡 Strategic Recommendation")
         if tax_152 > 0 and tax_152 < tax_91:
             savings = tax_91 - tax_152
             st.success(f"✅ We recommend the **Simplified Regime**. You save **EGP {savings:,.2f}**.")
         elif tax_91 < tax_152:
-             st.info("✅ The **General Regime** is better in this case (likely due to high expenses or low profit margin).")
+             st.info("✅ The **General Regime** is better in this case (likely due to high expenses).")
         else:
             st.write("Both regimes yield the same tax liability.")
 
 # ==========================
-# 4. About Page
+# 4. Smart Tax Assistant (Now #4 & English)
 # ==========================
-elif page == "4. About the Project":
+elif page == "4. Smart Tax Assistant 🤖":
+    st.header("Smart Tax Assistant 🤖")
+    st.write("Welcome to the AI Assistant. You can ask about Egyptian tax laws and calculations.")
+    
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("Ask your tax-related question here..."):
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        with st.chat_message("assistant"):
+            try:
+                system_instruction = "You are an Egyptian tax expert helping SMEs. Answer based on Egyptian laws professionally and concisely. Please respond in English. Question: "
+                response = model.generate_content(system_instruction + prompt)
+                full_response = response.text
+                st.markdown(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+            except Exception as e:
+                st.error("Connection error. Please check your API Key.")
+
+# ==========================
+# 5. About Page (Now #5 & Updated Team)
+# ==========================
+elif page == "5. About the Project":
     st.image("https://cdn-icons-png.flaticon.com/512/3135/3135679.png", width=100)
     st.title("About SME Tax Expert")
     st.markdown("### The Design and Evaluation of an Automated Tax Calculation Model for SMEs")
     
     st.markdown("""
     **Project Objective:**
-    To help Egyptian SMEs overcome tax compliance challenges by providing a simplified, automated tool for tax calculation and financial planning.
+    To help Egyptian SMEs overcome tax compliance challenges by providing a simplified tool for tax calculation.
     
     **Problem Statement:**
-    SMEs face high compliance costs and complexity in understanding Egyptian tax laws (Law 91 & Law 152), leading to unintentional errors.
+    SMEs face complexity in understanding Egyptian tax laws (Law 91 & Law 152), leading to unintentional errors.
     
     **Legal References:**
-    * **Income Tax Law No. 91 of 2005**
-    * **MSME Development Law No. 152 of 2020**
-    * **VAT Law No. 67 of 2016**
+    * Income Tax Law No. 91 of 2005
+    * MSME Development Law No. 152 of 2020
+    * VAT Law No. 67 of 2016
     """)
     
     st.divider()
     st.subheader("👥 Project Team")
     
+    # Updated team with Omar Mohamed Ahmed at the top
     team_data = {
         "Name": [
-            "Basmala Mohamed Saad", "Mennatallah Moamen", "Mareez Adham", 
-            "Omar Mohamed", "Abdelrahman Ali", "Fares Salah", 
+            "Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", 
+            "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", 
             "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"
         ],
         "ID": [
-            "2200236", "2200216", "2200243", 
-            "2202297", "2200190", "2202312", 
+            "2202297", "2200216", "2200243", 
+            "2200236", "2200190", "2202312", 
             "2200137", "2200176", "2202995"
         ]
     }
     st.table(pd.DataFrame(team_data))
-
-    st.caption("Graduation Project - 2026") 
-
-# ==========================
-# 5. Smart Tax Assistant
-# ==========================
-elif page == "5. Smart Tax Assistant 🤖":
-    st.header("المساعد الضريبي الذكي 🤖")
-    st.write("أهلاً بك في قسم المساعد الذكي. يمكنك الاستفسار عن القوانين الضريبية المصرية وكيفية حساب الضرائب لمشروعك.")
-    
-    # تجهيز ذاكرة المحادثة
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    # عرض المحادثة السابقة
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    # استقبال سؤال المستخدم
-    if prompt := st.chat_input("اكتب سؤالك هنا..."):
-        
-        # إظهار رسالة المستخدم
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})
-
-        # طلب الرد من الذكاء الاصطناعي
-        with st.chat_message("assistant"):
-            try:
-                system_instruction = "أنت خبير ضرائب مصري تساعد الشركات الصغيرة والمتوسطة. أجب بناءً على القوانين المصرية باحترافية واختصار. السؤال: "
-                
-                response = model.generate_content(system_instruction + prompt)
-                full_response = response.text
-                
-                st.markdown(full_response)
-                # حفظ رد البوت في الذاكرة
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-            except Exception as e:
-                st.error("عذراً، حدث خطأ في الاتصال. تأكد من إعداد API Key بشكل صحيح.")
+    st.caption("Graduation Project - 2026")
