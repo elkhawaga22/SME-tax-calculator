@@ -2,34 +2,34 @@ import streamlit as st
 import pandas as pd
 import google.generativeai as genai
 
-# ==========================================
+# ==========================
 # 1. Configuration & AI Setup
-# ==========================================
-# نصيحة: استخرج مفتاحاً جديداً من https://aistudio.google.com/
-API_KEY = "AIzaSyDmLYV0-NK9pwMyqZfIDyT4SMoI_8cDbSw" 
+# ==========================
+# المفتاح الجديد الذي استخرجته
+API_KEY = "AIzaSyACmy1UgjAVZBpf1sxPAvm0vap8cF_n08Q"
 
-def initialize_ai(key):
+def initialize_ai():
     try:
-        genai.configure(api_key=key)
-        # استخدام النسخة الأكثر استقراراً ودعماً
+        genai.configure(api_key=API_KEY)
+        # استخدام النسخة المستقرة والأحدث
         return genai.GenerativeModel('gemini-1.5-flash')
     except Exception as e:
         st.error(f"AI Setup Error: {e}")
         return None
 
-model = initialize_ai(API_KEY)
+model = initialize_ai()
 
-# ==========================================
+# ==========================
 # 2. Page Configuration
-# ==========================================
+# ==========================
 st.set_page_config(page_title="SME Tax Expert 2026", layout="wide", page_icon="🇪🇬")
 
-# Session State Initialization
+# تهيئة مخزن البيانات في المتصفح
 if 'sales' not in st.session_state: st.session_state.sales = []
 if 'expenses' not in st.session_state: st.session_state.expenses = []
 if 'messages' not in st.session_state: st.session_state.messages = []
 
-# --- Sidebar ---
+# --- القائمة الجانبية ---
 st.sidebar.title("🏢 SME Tax Expert")
 st.sidebar.markdown("---")
 menu = st.sidebar.radio("Navigation", [
@@ -40,11 +40,11 @@ menu = st.sidebar.radio("Navigation", [
     "👥 Team Credits"
 ])
 
-# ==========================================
+# ==========================
 # 3. Modules Logic
-# ==========================================
+# ==========================
 
-# --- Sales Module ---
+# --- صفحة المبيعات ---
 if menu == "🛒 Sales & Invoicing":
     st.header("Sales Management")
     with st.form("sale_form"):
@@ -53,10 +53,11 @@ if menu == "🛒 Sales & Invoicing":
         amount = c2.number_input("Amount (EGP)", min_value=0.0)
         if st.form_submit_button("Add Invoice") and amount > 0:
             st.session_state.sales.append({"Client": client, "Amount": amount})
-            st.success("Invoice Saved!")
-    st.dataframe(pd.DataFrame(st.session_state.sales), use_container_width=True)
+            st.success("Invoice Saved! ✅")
+    if st.session_state.sales:
+        st.dataframe(pd.DataFrame(st.session_state.sales), use_container_width=True)
 
-# --- Expenses Module ---
+# --- صفحة المصروفات ---
 elif menu == "💸 Expenses":
     st.header("Expense Tracking")
     with st.form("exp_form"):
@@ -65,10 +66,11 @@ elif menu == "💸 Expenses":
         cost = c2.number_input("Cost (EGP)", min_value=0.0)
         if st.form_submit_button("Record Expense") and cost > 0:
             st.session_state.expenses.append({"Item": item, "Cost": cost})
-            st.success("Expense Recorded!")
-    st.dataframe(pd.DataFrame(st.session_state.expenses), use_container_width=True)
+            st.success("Expense Recorded! ✅")
+    if st.session_state.expenses:
+        st.dataframe(pd.DataFrame(st.session_state.expenses), use_container_width=True)
 
-# --- Dashboard ---
+# --- لوحة التحكم ---
 elif menu == "📊 Dashboard":
     st.header("Financial Overview")
     rev = sum(s['Amount'] for s in st.session_state.sales)
@@ -78,38 +80,42 @@ elif menu == "📊 Dashboard":
     col1, col2, col3 = st.columns(3)
     col1.metric("Total Revenue", f"{rev:,.2f} EGP")
     col2.metric("Total Expenses", f"{exp:,.2f} EGP")
-    col3.metric("Net Profit", f"{profit:,.2f} EGP", delta_color="normal")
+    col3.metric("Net Profit", f"{profit:,.2f} EGP")
     
     st.markdown("---")
     st.subheader("Estimated Egyptian Tax (Law 152)")
+    # حساب تقريبي حسب القانون 152 للمشروعات الصغيرة
     tax = 5000 if rev < 1000000 else rev * 0.01
     st.info(f"Your estimated tax based on revenue is: **{tax:,.2f} EGP**")
 
-# --- AI Assistant ---
+# --- مساعد الذكاء الاصطناعي ---
 elif menu == "🤖 Smart AI Assistant":
     st.header("Smart Tax Assistant 🤖")
-    st.caption("Ask anything about Egyptian Tax Laws in English or Arabic")
+    st.caption("Ask anything about Egyptian Tax Laws")
     
+    # عرض تاريخ المحادثة
     for m in st.session_state.messages:
         with st.chat_message(m["role"]): st.markdown(m["content"])
 
-    if prompt := st.chat_input("How can I help you with your taxes?"):
+    if prompt := st.chat_input("How can I help you today?"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"): st.markdown(prompt)
 
         with st.chat_message("assistant"):
             if model:
                 try:
-                    full_prompt = f"You are a professional Egyptian tax expert. Help the user with: {prompt}"
+                    # توجيه الموديل للعمل كخبير ضرائب مصري
+                    full_prompt = f"You are a professional Egyptian tax expert for SMEs. Respond to: {prompt}"
                     response = model.generate_content(full_prompt)
-                    st.markdown(response.text)
-                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                    answer = response.text
+                    st.markdown(answer)
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
                 except Exception as e:
                     st.error(f"AI Error: {e}")
             else:
-                st.error("AI Model not initialized. Check API Key.")
+                st.error("AI Model not initialized correctly.")
 
-# --- Credits ---
+# --- صفحة الفريق ---
 elif menu == "👥 Team Credits":
     st.header("Project Team")
     team = pd.DataFrame({
