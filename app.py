@@ -3,9 +3,11 @@ import pandas as pd
 import google.generativeai as genai
 
 # 1. AI Configuration
-# REPLACE 'YOUR_NEW_API_KEY_HERE' with the new key you just created
-genai.configure(api_key="AIzaSyCULRB3xyOnO9f87qoUVYsSUhqa9yrQRNE")
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
+# Updated with your active API Key and stable transport method
+genai.configure(api_key="AIzaSyCULRB3xyOnO9f87qoUVYsSUhqa9yrQRNE", transport='rest')
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+# 2. Page Configuration & Styling
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
 
 # --- Database Simulation (Session State) ---
@@ -102,7 +104,7 @@ elif page == "3. Tax Dashboard & Report":
     tab1, tab2 = st.tabs(["🏢 Simplified Regime (Law 152)", "📝 General Regime (Law 91)"])
 
     with tab1:
-        st.info("ℹ️ **Explanation:** This regime applies to SMEs with turnover < 10M EGP.")
+        st.info("ℹ️ Explanation: Applies to SMEs with turnover < 10M EGP.")
         tax_152 = 0
         desc_152 = ""
         if total_sales == 0:
@@ -116,20 +118,20 @@ elif page == "3. Tax Dashboard & Report":
             elif total_sales <= 10000000: tax_152, desc_152 = total_sales * 0.01, "1.0% of Turnover"
             
             if tax_152 > 0:
-                st.success(f"**Tax Due:** EGP {tax_152:,.2f}")
-                st.write(f"**Calculation Logic:** {desc_152}")
+                st.success(f"Tax Due: EGP {tax_152:,.2f}")
+                st.write(f"Calculation: {desc_152}")
     
     with tab2:
-        st.info("ℹ️ **Explanation:** Standard Corporate Income Tax (22.5% of Net Profit).")
+        st.info("ℹ️ Explanation: Standard Corporate Income Tax (22.5% of Net Profit).")
         tax_91 = max(0, net_profit * 0.225)
-        st.warning(f"**Tax Due:** EGP {tax_91:,.2f}")
+        st.warning(f"Tax Due: EGP {tax_91:,.2f}")
 
 # ==========================
-# 4. Smart Tax Assistant (English & Fixed Indentation)
+# 4. Smart Tax Assistant
 # ==========================
 elif page == "4. Smart Tax Assistant 🤖":
     st.header("Smart Tax Assistant 🤖")
-    st.write("Welcome to the AI Assistant. You can ask about Egyptian tax laws and calculations.")
+    st.write("Welcome to the AI Assistant. Ask about Egyptian tax laws (English).")
     
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -145,7 +147,7 @@ elif page == "4. Smart Tax Assistant 🤖":
 
         with st.chat_message("assistant"):
             try:
-                system_instruction = "You are an Egyptian tax expert helping SMEs. Answer based on Egyptian laws professionally and concisely. Please respond in English. Question: "
+                system_instruction = "You are an Egyptian tax expert for SMEs. Answer professionally in English. Question: "
                 response = model.generate_content(system_instruction + prompt)
                 full_response = response.text
                 st.markdown(full_response)
@@ -154,18 +156,13 @@ elif page == "4. Smart Tax Assistant 🤖":
                 st.error(f"AI Connection Error: {e}")
 
 # ==========================
-# 5. About Page (Updated Team)
+# 5. About Page
 # ==========================
 elif page == "5. About the Project":
     st.image("https://cdn-icons-png.flaticon.com/512/3135/3135679.png", width=100)
     st.title("About SME Tax Expert")
     
-    st.markdown("""
-    **Project Objective:**
-    To help Egyptian SMEs overcome tax compliance challenges by providing an automated tool for tax calculation.
-    
-    **Project Team:**
-    """)
+    st.markdown("### Graduation Project Team")
     
     team_data = {
         "Name": [
