@@ -1,159 +1,197 @@
 import streamlit as st
 import pandas as pd
 
-# 1. Page Configuration
+# 1. إعدادات الصفحة المتقدمة
 st.set_page_config(
-    page_title="SME Tax Calculator 2026",
+    page_title="SME Tax Calculator Pro",
     layout="wide",
-    page_icon="🔐"
+    page_icon="💎"
 )
 
-# --- Session State Initialization ---
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-if 'user_role' not in st.session_state:
-    st.session_state.user_role = None
-if 'sales_data' not in st.session_state: 
-    st.session_state.sales_data = []
-if 'expenses_data' not in st.session_state: 
-    st.session_state.expenses_data = []
-
-# --- CSS Styling ---
-st.markdown("""
-    <style>
-    [data-testid="stMetric"] {
-        background-color: #ffffff !important;
-        padding: 20px !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-    }
-    [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
-        color: #31333F !important;
-    }
-    </style>
+# --- CSS التنسيق "الشيك" جداً ---
+def apply_custom_style(role):
+    primary_color = "#D4AF37" if role == "premium" else "#1E3A8A" # ذهبي للبريميم / أزرق للمجاني
+    
+    st.markdown(f"""
+        <style>
+        /* الخلفية العامة */
+        .stApp {{
+            background-color: #f4f7f9;
+        }}
+        
+        /* تنسيق الكروت (Metrics) */
+        [data-testid="stMetric"] {{
+            background: white !important;
+            padding: 25px !important;
+            border-radius: 15px !important;
+            border-top: 5px solid {primary_color} !important;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+        }}
+        
+        /* تنسيق القائمة الجانبية */
+        section[data-testid="stSidebar"] {{
+            background-color: #ffffff !important;
+            border-right: 1px solid #e0e0e0;
+        }}
+        
+        /* بادج البريميم */
+        .premium-badge {{
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: linear-gradient(45deg, #D4AF37, #F9E79F);
+            color: #000;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3);
+        }}
+        
+        /* العناوين */
+        h1, h2, h3 {{
+            color: #1a202c !important;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }}
+        </style>
     """, unsafe_allow_html=True)
 
+# --- تهيئة البيانات ---
+if 'logged_in' not in st.session_state: st.session_state.logged_in = False
+if 'user_role' not in st.session_state: st.session_state.user_role = None
+if 'sales_data' not in st.session_state: st.session_state.sales_data = []
+if 'expenses_data' not in st.session_state: st.session_state.expenses_data = []
+
 # ==========================================
-# AUTHENTICATION INTERFACE
+# واجهة الدخول (Login)
 # ==========================================
 def login():
-    st.title("🔐 SME Tax Calculator - Login")
-    st.info("Welcome back! Please enter your credentials to access the system.")
+    st.markdown("<h1 style='text-align: center;'>🔐 SME Tax Calculator</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #666;'>Log in to manage your taxes professionally</p>", unsafe_allow_html=True)
     
-    with st.form("login_form"):
-        email = st.text_input("Email / Username")
-        password = st.text_input("Password", type="password")
-        submit = st.form_submit_button("Login")
-        
-        if submit:
-            if email == "free_admin" and password == "free_admin":
-                st.session_state.logged_in = True
-                st.session_state.user_role = "free"
-                st.rerun()
-            elif email == "premium_admin" and password == "premium_admin":
-                st.session_state.logged_in = True
-                st.session_state.user_role = "premium"
-                st.rerun()
-            else:
-                st.error("Invalid email or password. Please try again.")
-
-def logout():
-    st.session_state.logged_in = False
-    st.session_state.user_role = None
-    st.rerun()
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.container():
+            st.markdown("---")
+            email = st.text_input("Email")
+            password = st.text_input("Password", type="password")
+            submit = st.button("Access Dashboard", use_container_width=True)
+            
+            if submit:
+                u, p = email.strip().lower(), password.strip()
+                if u == "free_admin" and p == "free_admin":
+                    st.session_state.logged_in, st.session_state.user_role = True, "free"
+                    st.rerun()
+                elif u == "premium_admin" and p == "premium_admin":
+                    st.session_state.logged_in, st.session_state.user_role = True, "premium"
+                    st.rerun()
+                else:
+                    st.error("Wrong credentials. Please try again.")
 
 # ==========================================
-# MAIN APPLICATION LOGIC
+# التطبيق الرئيسي
 # ==========================================
 if not st.session_state.logged_in:
     login()
 else:
-    # Sidebar Navigation
-    st.sidebar.title("SME Tax Calculator")
-    st.sidebar.write(f"Logged in as: **{st.session_state.user_role.upper()}**")
+    apply_custom_style(st.session_state.user_role)
     
-    menu = st.sidebar.radio("Navigation", [
-        "🛒 Sales & Invoicing",
-        "💸 Operating Expenses",
-        "📊 Reports & Tax Dashboard",
-        "👥 Team & Objectives"
-    ])
+    # Sidebar
+    st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", width=80)
     
-    if st.sidebar.button("Logout 🚪"):
-        logout()
+    if st.session_state.user_role == "premium":
+        st.sidebar.markdown('<div class="premium-badge">💎 PREMIUM ACCOUNT</div>', unsafe_allow_html=True)
+    else:
+        st.sidebar.markdown('<div style="text-align:center; color:#666; margin-bottom:20px;">STANDARD ACCOUNT</div>', unsafe_allow_html=True)
 
-    # --- Tax Engine ---
-    def calculate_taxes(rev, exp):
+    # تم تبسيط الأسماء لضمان ظهورها
+    menu_options = {
+        "Sales": "🛒 Sales & Invoicing",
+        "Expenses": "💸 Operating Expenses",
+        "Reports": "📊 Tax Dashboard",
+        "Team": "👥 Team & Objectives"
+    }
+    
+    choice = st.sidebar.radio("Main Menu", list(menu_options.values()))
+    
+    st.sidebar.markdown("---")
+    if st.sidebar.button("Log Out 🚪", use_container_width=True):
+        st.session_state.logged_in = False
+        st.rerun()
+
+    # --- الحسابات ---
+    def get_tax_report(rev, exp):
         profit = rev - exp
-        if rev < 250000: tax_152 = 1000
-        elif rev < 500000: tax_152 = 2500
-        elif rev < 1000000: tax_152 = 5000
-        elif rev < 2000000: tax_152 = rev * 0.005
-        elif rev < 3000000: tax_152 = rev * 0.0075
-        else: tax_152 = rev * 0.01
-        
-        tax_91 = max(0, profit * 0.225)
-        return tax_152, tax_91
+        # القانون 152
+        if rev < 250000: t152 = 1000
+        elif rev < 500000: t152 = 2500
+        elif rev < 1000000: t152 = 5000
+        elif rev < 2000000: t152 = rev * 0.005
+        elif rev < 3000000: t152 = rev * 0.0075
+        else: t152 = rev * 0.01
+        return t152, max(0, profit * 0.225)
 
-    # --- 1. Sales ---
-    if menu == "🛒 Sales & Invoicing":
+    # --- الصفحات ---
+    if choice == menu_options["Sales"]:
         st.title("🛒 Sales Management")
-        with st.form("sales_form", clear_on_submit=True):
-            col1, col2 = st.columns(2)
-            client = col1.text_input("Client")
-            amount = col2.number_input("Amount (EGP)", min_value=0.0)
-            if st.form_submit_button("Add ✅"):
-                if amount > 0: st.session_state.sales_data.append({"Description": client, "Amount": amount})
-
+        with st.container():
+            c1, c2 = st.columns(2)
+            client = c1.text_input("Client")
+            amount = c2.number_input("Amount (EGP)", min_value=0.0)
+            if st.button("Add Record ✅", use_container_width=True):
+                if amount > 0: st.session_state.sales_data.append({"Client": client, "Amount": amount})
+        
         if st.session_state.sales_data:
             st.table(pd.DataFrame(st.session_state.sales_data))
 
-    # --- 2. Expenses ---
-    elif menu == "💸 Operating Expenses":
-        st.title("💸 Expense Management")
-        with st.form("exp_form", clear_on_submit=True):
+    elif choice == menu_options["Expenses"]:
+        st.title("💸 Expenses Management")
+        with st.container():
             item = st.text_input("Expense Item")
             cost = st.number_input("Cost (EGP)", min_value=0.0)
-            if st.form_submit_button("Save 💾"):
+            if st.button("Record Expense 💾", use_container_width=True):
                 if cost > 0: st.session_state.expenses_data.append({"Item": item, "Cost": cost})
-
+        
         if st.session_state.expenses_data:
             st.table(pd.DataFrame(st.session_state.expenses_data))
 
-    # --- 3. Dashboard (The Download Restriction Happens Here) ---
-    elif menu == "📊 Reports & Tax Dashboard":
-        st.title("📊 Financial Report")
+    elif choice == menu_options["Reports"]:
+        st.title("📊 Financial Intelligence Dashboard")
         rev = sum(d['Amount'] for d in st.session_state.sales_data)
         exp = sum(d['Cost'] for d in st.session_state.expenses_data)
-        profit = rev - exp
         
         m1, m2, m3 = st.columns(3)
-        m1.metric("Total Revenue", f"{rev:,.2f} EGP")
-        m2.metric("Total Expenses", f"{exp:,.2f} EGP")
-        m3.metric("Net Profit", f"{profit:,.2f} EGP")
+        m1.metric("Revenue", f"{rev:,.2f} EGP")
+        m2.metric("Expenses", f"{exp:,.2f} EGP")
+        m3.metric("Net Profit", f"{rev - exp:,.2f} EGP")
 
-        tax_152, tax_91 = calculate_taxes(rev, exp)
+        st.markdown("### Estimated Taxes")
+        t152, t91 = get_chat_response = get_tax_report(rev, exp)
         
-        col_a, col_b = st.columns(2)
-        with col_a: st.success(f"Law 152 Tax: {tax_152:,.2f} EGP")
-        with col_b: st.warning(f"Law 91 Tax: {tax_91:,.2f} EGP")
+        c_a, c_b = st.columns(2)
+        c_a.success(f"Law 152: {t152:,.2f} EGP")
+        c_b.warning(f"Law 91: {t91:,.2f} EGP")
 
         st.markdown("---")
-        
-        # --- ACCESS CONTROL ---
         if st.session_state.user_role == "premium":
-            report_txt = f"Report: Revenue {rev}, Tax 152: {tax_152}, Tax 91: {tax_91}"
-            st.download_button("📥 Download Official Report", data=report_txt, file_name="Tax_Report.txt")
+            st.info("💎 Premium Feature: You can download the full PDF/Text report.")
+            st.download_button("📥 Download Official Report", data=f"Revenue: {rev}, Profit: {rev-exp}", file_name="Report.txt")
         else:
-            st.error("🚫 Report download is disabled for FREE accounts. Upgrade to PREMIUM to download.")
+            st.error("🚫 Report download is locked for Free accounts. Contact admin for Premium.")
 
-    # --- 4. Team & Objectives ---
-    elif menu == "👥 Team & Project Objectives":
+    # هذه هي الصفحة التي كانت تختفي، تم التأكد من ربطها بالقاموس (Dictionary)
+    elif choice == menu_options["Team"]:
         st.title("👥 Team & Objectives")
+        
+        st.subheader("Project Mission")
+        st.markdown("""
+        Digitizing the Egyptian tax system for SMEs to align with **Egypt Vision 2030**.
+        Our tool ensures accuracy, legality, and ease of use.
+        """)
+        
+        st.subheader("Our Team")
         team = pd.DataFrame({
-            "Full Name": ["Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"],
+            "Member Name": ["Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"],
             "Student ID": ["2202297", "2200216", "2200243", "2200236", "2200190", "2202312", "2200137", "2200176", "2202995"]
         })
         st.table(team)
-        st.markdown("---")
-        st.info("This system is programmed according to the Egyptian Tax Authority standards (Law 152/2020 & Law 91/2005).")
+        
+        st.info("⚠️ All calculations are strictly based on the Egyptian Tax Authority standards (Law 152/2020 & 91/2005).")
