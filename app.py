@@ -5,7 +5,7 @@ import requests
 # 1. Configuration
 # تم وضع المفتاح الخاص بك والربط المباشر بـ v1 لتجنب الـ 404
 API_KEY = "AIzaSyDJpTMxu40h_WiDyJZ_WB8TQD2xFmFRnEU"
-API_URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+API_URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-exp:generateContent?key={API_KEY}"
 
 # 2. Page Configuration & Styling
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
