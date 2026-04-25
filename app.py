@@ -1,5 +1,10 @@
 import streamlit as st
 import pandas as pd
+import google.generativeai as genai
+
+# تم تعديل مكان المفتاح ليكون داخل علامات التنصيص
+genai.configure(api_key="AIzaSyDOXiay17VknR2XXq6ZFYe3oKY-N9cmKzQ")
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 # Page Configuration & Styling
 st.set_page_config(page_title="SME Tax Expert", layout="wide", page_icon="🇪🇬")
@@ -13,12 +18,15 @@ if 'expenses_data' not in st.session_state:
 # --- Sidebar Menu ---
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2534/2534204.png", width=80)
 st.sidebar.title("SME Tax Expert")
-st.sidebar.markdown("Graduation Project 2026")  # <--- تم التعديل هنا
+st.sidebar.markdown("Graduation Project 2026") 
+
+# تم إضافة الفاصلة هنا بعد About the Project
 page = st.sidebar.radio("Navigation", [
     "1. Sales & Invoicing", 
     "2. Operating Expenses", 
     "3. Tax Dashboard & Report",
-    "4. About the Project"
+    "4. About the Project",
+    "5. Smart Tax Assistant 🤖"
 ])
 
 # ==========================
@@ -125,7 +133,7 @@ elif page == "3. Tax Dashboard & Report":
     # --- TAB 2: General Regime ---
     with tab2:
         st.info("ℹ️ **Explanation:** This is the standard Corporate Income Tax. It is calculated on *Net Profit* (Revenue - Expenses).")
-        st.latex(r'''Tax = (Revenue - Expenses) \times 22.5\%''')
+        st.markdown(r"Tax = (Revenue - Expenses) $\times$ 22.5%")
         
         tax_91 = max(0, net_profit * 0.225)
         
@@ -184,4 +192,42 @@ elif page == "4. About the Project":
     }
     st.table(pd.DataFrame(team_data))
 
-    st.caption("Graduation Project - 2026") # <--- تم التعديل هنا أيضاً
+    st.caption("Graduation Project - 2026") 
+
+# ==========================
+# 5. Smart Tax Assistant
+# ==========================
+elif page == "5. Smart Tax Assistant 🤖":
+    st.header("المساعد الضريبي الذكي 🤖")
+    st.write("أهلاً بك في قسم المساعد الذكي. يمكنك الاستفسار عن القوانين الضريبية المصرية وكيفية حساب الضرائب لمشروعك.")
+    
+    # تجهيز ذاكرة المحادثة
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # عرض المحادثة السابقة
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # استقبال سؤال المستخدم
+    if prompt := st.chat_input("اكتب سؤالك هنا..."):
+        
+        # إظهار رسالة المستخدم
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        # طلب الرد من الذكاء الاصطناعي
+        with st.chat_message("assistant"):
+            try:
+                system_instruction = "أنت خبير ضرائب مصري تساعد الشركات الصغيرة والمتوسطة. أجب بناءً على القوانين المصرية باحترافية واختصار. السؤال: "
+                
+                response = model.generate_content(system_instruction + prompt)
+                full_response = response.text
+                
+                st.markdown(full_response)
+                # حفظ رد البوت في الذاكرة
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+            except Exception as e:
+                st.error("عذراً، حدث خطأ في الاتصال. تأكد من إعداد API Key بشكل صحيح.")
