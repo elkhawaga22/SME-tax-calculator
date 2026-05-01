@@ -8,7 +8,7 @@ import numpy as np
 # ==========================================
 # 0. Page Configuration & SaaS CSS
 # ==========================================
-st.set_page_config(page_title="KloudTax - SaaS Platform", layout="wide", page_icon="☁️")
+st.set_page_config(page_title="SME Tax Calculator - SaaS", layout="wide", page_icon="☁️")
 
 st.markdown("""
     <style>
@@ -66,24 +66,24 @@ def calculate_egyptian_taxes(revenue, expenses):
 
 def generate_smart_insights(revenue, expenses, tax_152, tax_91):
     insights = []
-    if revenue == 0: return ["سجل بياناتك للبدء في التحليل."]
+    if revenue == 0: return ["💡 **Notice:** Record your sales data to start generating AI insights."]
     
-    # Actionable Insights
+    # Actionable Insights (English)
     if tax_152 < tax_91:
         savings = tax_91 - tax_152
-        insights.append(f"💡 **تحسين:** الانضمام لقانون المشروعات الصغيرة سيوفر لك **{savings:,.0f} جنيه** هذا العام.")
+        insights.append(f"💡 **Tax Optimization:** Joining the Small Enterprises Law (Law 152) will save you **{savings:,.0f} EGP** this year compared to the standard income tax.")
     
     # Expense impact simulation
     potential_expense = expenses + 10000
     _, new_tax_91, _ = calculate_egyptian_taxes(revenue, potential_expense)
     tax_saved = tax_91 - new_tax_91
     if tax_saved > 0:
-        insights.append(f"📉 **محاكاة:** إذا قمت بزيادة مصروفاتك التشغيلية الموثقة بـ 10,000 جنيه، ستنخفض ضريبتك (قانون 91) بمقدار **{tax_saved:,.0f} جنيه**.")
+        insights.append(f"📉 **Simulation:** If you increase your documented operating expenses by 10,000 EGP, your tax liability under Law 91 will decrease by **{tax_saved:,.0f} EGP**.")
         
     return insights
 
 def inject_mock_data():
-    """حقن بيانات وهمية لتجميل لوحة التحكم فور الدخول"""
+    """Inject mock data to beautify the dashboard upon login"""
     dates = [datetime.now() - timedelta(days=x) for x in range(30)]
     sales = [{'Date': d, 'Category': 'Consulting', 'Type': 'Sale', 'Amount': np.random.randint(2000, 8000)} for d in dates]
     expenses = [{'Date': d, 'Category': 'Software', 'Type': 'Expense', 'Amount': np.random.randint(500, 3000)} for d in dates[::3]]
@@ -95,13 +95,13 @@ def inject_mock_data():
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'user_role' not in st.session_state: st.session_state.user_role = None
 if 'data' not in st.session_state: 
-    st.session_state.data = inject_mock_data() # تحميل البيانات التجريبية للـ MVP
+    st.session_state.data = inject_mock_data()
 
 # ==========================================
 # 3. SaaS Login Interface
 # ==========================================
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align:center;'>☁️ KloudTax Platform</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center;'>☁️ SME Tax Calculator</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; color:#64748b;'>The Smart Tax Platform for Egyptian SMEs</p>", unsafe_allow_html=True)
     
     _, col, _ = st.columns([1, 1.2, 1])
@@ -132,7 +132,8 @@ else:
         "💸 All Expenses", 
         "🧠 AI Tax Insights",
         "📂 Upload Excel",
-        "📅 Tax Reminders"
+        "📅 Tax Reminders",
+        "👥 About Team"
     ])
     
     st.sidebar.markdown("---")
@@ -147,39 +148,31 @@ else:
     t_152, t_91, profit = calculate_egyptian_taxes(total_rev, total_exp)
 
     # ------------------------------------------
-    # SaaS Dashboard (Mimicking the image)
+    # SaaS Dashboard 
     # ------------------------------------------
     if menu == "📊 Overview":
         st.header("Dashboard Overview")
         
-        # Row 1: Top Metrics
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Gross Revenue", f"EGP {total_rev:,.0f}")
         m2.metric("Total Expenses", f"EGP {total_exp:,.0f}")
         m3.metric("Net Profit", f"EGP {profit:,.0f}", delta=f"{(profit/total_rev)*100 if total_rev else 0:.1f}% Margin")
         m4.metric("Est. Tax (Law 152)", f"EGP {t_152:,.0f}", delta="Optimal", delta_color="normal")
 
-        # Row 2: Charts
         col_chart1, col_chart2 = st.columns([2, 1])
-        
         with col_chart1:
             st.markdown("**Cash Flow & Bank Account**")
-            # Line chart mimicking bank account tracking
             daily_data = df.groupby([df['Date'].dt.date, 'Type'])['Amount'].sum().reset_index()
-            fig1 = px.line(daily_data, x='Date', y='Amount', color='Type', 
-                           color_discrete_map={'Sale':'#8b5cf6', 'Expense':'#cbd5e1'})
+            fig1 = px.line(daily_data, x='Date', y='Amount', color='Type', color_discrete_map={'Sale':'#8b5cf6', 'Expense':'#cbd5e1'})
             fig1.update_layout(margin=dict(l=0, r=0, t=0, b=0), plot_bgcolor='white', paper_bgcolor='white', height=250)
             st.plotly_chart(fig1, use_container_width=True)
             
         with col_chart2:
             st.markdown("**Profit Margin Graph**")
-            # Donut chart
-            fig2 = px.pie(values=[profit, total_exp], names=['Gross Profit', 'Expenses'], hole=0.7,
-                          color_discrete_sequence=['#8b5cf6', '#f1f5f9'])
+            fig2 = px.pie(values=[profit, total_exp], names=['Gross Profit', 'Expenses'], hole=0.7, color_discrete_sequence=['#8b5cf6', '#f1f5f9'])
             fig2.update_layout(margin=dict(l=0, r=0, t=0, b=0), showlegend=False, height=250)
             st.plotly_chart(fig2, use_container_width=True)
 
-        # Row 3: Bar Chart and Table
         col_chart3, col_chart4 = st.columns([2, 1])
         with col_chart3:
             st.markdown("**Invoiced to you (Monthly)**")
@@ -233,7 +226,7 @@ else:
                 
             st.markdown("---")
             st.subheader("Generate Official PDF Report")
-            html_report = f"<h1>KloudTax Report</h1><p>Revenue: {total_rev}</p><p>Tax: {t_152}</p>"
+            html_report = f"<h1>SME Tax Calculator Report</h1><p>Revenue: {total_rev}</p><p>Tax: {t_152}</p>"
             st.download_button("📥 Download Report", data=html_report, file_name="Report.html", mime="text/html")
         else:
             st.error("🔒 AI Insights and PDF generation are only available in the Pro Tier (150 EGP/mo).")
@@ -257,3 +250,24 @@ else:
             "Status": ["Upcoming", "Action Required", "On Track"]
         })
         st.table(schedule)
+        
+    # ------------------------------------------
+    # About Team Section
+    # ------------------------------------------
+    elif menu == "👥 About Team":
+        st.header("👥 Project Developers")
+        st.markdown("Developed strictly based on **Egyptian Tax Authority Standards (Law 152/2020 & Law 91/2005)** for Graduation Project 2026.")
+        
+        team_data = {
+            "Member Name": [
+                "Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", 
+                "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", 
+                "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"
+            ],
+            "Student ID": [
+                "2202297", "2200216", "2200243", 
+                "2200236", "2200190", "2202312", 
+                "2200137", "2200176", "2202995"
+            ]
+        }
+        st.table(pd.DataFrame(team_data))
