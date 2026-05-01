@@ -4,7 +4,7 @@ import plotly.express as px
 from datetime import datetime
 
 # ==========================================
-# 0. Page Configuration & CSS
+# 0. Page Configuration & Custom CSS
 # ==========================================
 st.set_page_config(
     page_title="SME Tax Calculator Pro",
@@ -14,34 +14,37 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-    .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+    .stApp { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); font-family: 'Segoe UI', sans-serif; }
     div[data-testid="stVerticalBlock"] > div {
-        background-color: rgba(255, 255, 255, 0.9);
-        border-radius: 20px;
-        padding: 20px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.18);
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e2e8f0;
         margin-bottom: 20px;
     }
-    [data-testid="stSidebar"] { background-color: white !important; border-right: 1px solid #eee; }
+    [data-testid="stSidebar"] { background-color: white !important; border-right: 1px solid #e2e8f0; }
     .premium-badge {
-        background: linear-gradient(90deg, #FFD700, #FF8C00);
-        padding: 10px; border-radius: 15px; color: white;
-        text-align: center; font-weight: bold; margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        padding: 10px; border-radius: 12px; color: white;
+        text-align: center; font-weight: 700; margin-bottom: 20px;
+        box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
     }
     .stButton > button {
-        background: linear-gradient(45deg, #00c6ff, #0072ff) !important;
+        background: linear-gradient(45deg, #2563eb, #1d4ed8) !important;
         color: white !important; border: none !important;
-        border-radius: 12px !important; transition: 0.3s;
+        border-radius: 8px !important; font-weight: 600; transition: 0.3s;
     }
-    .stButton > button:hover { transform: scale(1.02); box-shadow: 0 5px 15px rgba(0,114,255,0.3); }
+    .stButton > button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+    .advice-box { 
+        background-color: #eff6ff; border-left: 4px solid #3b82f6; 
+        padding: 15px; border-radius: 4px; margin-bottom: 10px; font-size: 15px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 1. Core Functions (المنطق البرمجي)
+# 1. Core Functions (المنطق البرمجي والذكاء الاصطناعي)
 # ==========================================
 def authenticate_user(username, password):
     u, p = username.strip().lower(), password.strip()
@@ -61,6 +64,57 @@ def calculate_egyptian_taxes(revenue, expenses):
     # Law 91
     tax_91 = max(0.0, net_profit * 0.225)
     return tax_152, tax_91, net_profit
+
+def generate_tax_advice(revenue, expenses, tax_152, tax_91):
+    advice = []
+    if revenue == 0:
+        return ["💡 سجل مبيعاتك ومصروفاتك أولاً لنتمكن من تقديم نصائح دقيقة."]
+        
+    if tax_152 < tax_91:
+        advice.append("💡 **التحسين الضريبي:** قانون 152 (المشروعات الصغيرة) أوفر لك حالياً. يُنصح باستخراج شهادة تصنيف من جهاز تنمية المشروعات.")
+    elif tax_91 < tax_152:
+        advice.append("💡 **التحسين الضريبي:** قانون 91 (الدخل العام) أفضل لك بسبب ارتفاع مصروفاتك. حافظ على فواتيرك الإلكترونية لتأكيد المصروفات.")
+    
+    if 240000 <= revenue < 250000:
+        advice.append("⚠️ **تنبيه الشريحة:** إيراداتك تقترب جداً من 250 ألف جنيه. تجاوز هذا الرقم سيرفع الضريبة المقطوعة من 1000 إلى 2500 جنيه.")
+    elif 950000 <= revenue < 1000000:
+        advice.append("⚠️ **تنبيه الشريحة:** أنت تقترب من حاجز المليون جنيه، حيث ستتغير الضريبة إلى نسبة مئوية (0.5%) بدلاً من مبلغ ثابت.")
+        
+    return advice
+
+def generate_html_report(revenue, expenses, tax_152, tax_91, profit):
+    return f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; padding: 30px; color: #333; }}
+            h1 {{ color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }}
+            .summary {{ background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }}
+            .tax-box {{ margin-top: 20px; padding: 15px; border-left: 5px solid #f59e0b; background: #fffbeb; }}
+        </style>
+    </head>
+    <body>
+        <h1>SME Tax Calculator - Official Report</h1>
+        <p><strong>Date:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
+        
+        <div class="summary">
+            <h3>Financial Summary</h3>
+            <p><strong>Total Revenue:</strong> {revenue:,.2f} EGP</p>
+            <p><strong>Total Expenses:</strong> {expenses:,.2f} EGP</p>
+            <p><strong>Net Profit:</strong> {profit:,.2f} EGP</p>
+        </div>
+        
+        <div class="tax-box">
+            <h3>Tax Liability Assessment</h3>
+            <ul>
+                <li><strong>Law 152 (SMEs):</strong> {tax_152:,.2f} EGP</li>
+                <li><strong>Law 91 (Income Tax):</strong> {tax_91:,.2f} EGP</li>
+            </ul>
+        </div>
+        <p><em>* This is an auto-generated preliminary assessment based on user input.</em></p>
+    </body>
+    </html>
+    """
 
 def add_transaction(current_df, category, trans_type, amount):
     new_record = {'Date': datetime.now().strftime("%Y-%m-%d %H:%M"), 'Category': category, 'Type': trans_type, 'Amount': amount}
@@ -152,48 +206,74 @@ else:
         else:
             st.info("💡 Start recording sales and expenses to generate interactive charts.")
 
-    # --- Sales Module ---
+    # --- Sales Module (With Validation & Tooltips) ---
     elif menu == "🛒 Sales & Invoicing":
         st.title("🛒 Sales Ledger")
         with st.form("sale_form", clear_on_submit=True):
             c1, c2 = st.columns(2)
-            cat = c1.text_input("Income Source / Client")
-            amt = c2.number_input("Amount (EGP)", min_value=0.0)
+            cat = c1.text_input("Income Source / Client", help="أدخل اسم العميل أو نوع المبيعات.")
+            amt = c2.number_input("Amount (EGP)", min_value=0.0, step=100.0, help="لا يمكن إدخال قيم سالبة.")
+            
             if st.form_submit_button("Record Revenue"):
-                if amt > 0:
+                if amt > 0 and cat.strip() != "":
                     st.session_state.data = add_transaction(st.session_state.data, cat, "Sale", amt)
                     st.success("Transaction Saved!")
+                else:
+                    st.error("⚠️ يرجى التأكد من كتابة الوصف وإدخال مبلغ أكبر من الصفر.")
+                    
         if not df[df['Type'] == 'Sale'].empty:
             st.dataframe(df[df['Type'] == 'Sale'], use_container_width=True)
 
-    # --- Expenses Module ---
+    # --- Expenses Module (With Validation & Tooltips) ---
     elif menu == "💸 Operating Expenses":
         st.title("💸 Expense Ledger")
         with st.form("exp_form", clear_on_submit=True):
             c1, c2 = st.columns(2)
-            cat = c1.text_input("Expense Category (e.g., Rent, Utilities)")
-            amt = c2.number_input("Amount (EGP)", min_value=0.0)
+            cat = c1.text_input("Expense Category", help="مثال: إيجار، رواتب، مرافق.")
+            amt = c2.number_input("Amount (EGP)", min_value=0.0, step=100.0, help="سجل المصروفات المدعمة بمستندات فقط.")
+            
             if st.form_submit_button("Record Cost"):
-                if amt > 0:
+                if amt > 0 and cat.strip() != "":
                     st.session_state.data = add_transaction(st.session_state.data, cat, "Expense", amt)
                     st.success("Transaction Saved!")
+                else:
+                    st.error("⚠️ يرجى التأكد من كتابة الوصف وإدخال مبلغ أكبر من الصفر.")
+                    
         if not df[df['Type'] == 'Expense'].empty:
             st.dataframe(df[df['Type'] == 'Expense'], use_container_width=True)
 
-    # --- Analytics Module (PRO) ---
+    # --- Analytics Module (PRO) - With AI Advisor & HTML Report ---
     elif menu == "📈 Advanced Analytics (PRO)":
-        st.title("🚀 Advanced AI Forecasting")
+        st.title("🚀 Advanced Analytics & AI Advisor")
         if st.session_state.user_role == "premium":
+            # 1. AI Insights
+            st.subheader("🧠 AI Tax Insights")
+            advices = generate_tax_advice(total_rev, total_exp, t_152, t_91)
+            for adv in advices:
+                st.markdown(f'<div class="advice-box">{adv}</div>', unsafe_allow_html=True)
+            
+            st.markdown("---")
+            
+            # 2. Charts
             st.markdown("#### Projected Revenue Growth (Next 12 Months)")
             sim_dates = pd.date_range(start='2024-01-01', periods=12, freq='ME')
             sim_rev = [200000, 220000, 210000, 250000, 280000, 310000, 350000, 400000, 420000, 450000, 480000, 520000]
             fig = px.line(x=sim_dates, y=sim_rev, markers=True, title="Simulated AI Revenue Prediction")
             st.plotly_chart(fig, use_container_width=True)
             
-            report_content = f"Financial Summary\nRevenue: {total_rev}\nExpenses: {total_exp}\nLaw 152 Tax: {t_152}\nLaw 91 Tax: {t_91}"
-            st.download_button("📥 Download Official Report", data=report_content, file_name="Tax_Report.txt")
+            st.markdown("---")
+            
+            # 3. HTML Report Download
+            st.subheader("📑 Generate Official Report")
+            html_content = generate_html_report(total_rev, total_exp, t_152, t_91, profit)
+            st.download_button(
+                label="📥 Download Detailed Report (HTML for PDF Print)",
+                data=html_content,
+                file_name=f"SME_Tax_Report_{datetime.now().strftime('%Y%m%d')}.html",
+                mime="text/html"
+            )
         else:
-            st.error("🚫 Forecasting and Report Downloads are PREMIUM features. Please upgrade.")
+            st.error("🚫 Forecasting, AI Advisor, and Report Downloads are PREMIUM features. Please upgrade.")
 
     # --- Document Analysis (PRO) ---
     elif menu == "📂 Document Analysis (PRO)":
