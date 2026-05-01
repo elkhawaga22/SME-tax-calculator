@@ -3,22 +3,18 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 
-# 1. إعدادات الصفحة الاحترافية (SME Edition)
+# ==========================================
+# 0. Page Configuration & CSS
+# ==========================================
 st.set_page_config(
     page_title="SME Tax Calculator Pro",
     layout="wide",
     page_icon="💎"
 )
 
-# --- CSS السحر لتحويل الشكل (Soft UI) ---
 st.markdown("""
     <style>
-    /* خلفية متدرجة ناعمة تضاهي الصورة */
-    .stApp {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    }
-    
-    /* تنسيق الكروت (الخانات البيضاء) */
+    .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
     div[data-testid="stVerticalBlock"] > div {
         background-color: rgba(255, 255, 255, 0.9);
         border-radius: 20px;
@@ -28,81 +24,83 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.18);
         margin-bottom: 20px;
     }
-
-    /* تنسيق القائمة الجانبية لتكون نظيفة */
-    [data-testid="stSidebar"] {
-        background-color: white !important;
-        border-right: 1px solid #eee;
-    }
-    
-    /* تصميم بادج البريميم بشكل "شيك" */
+    [data-testid="stSidebar"] { background-color: white !important; border-right: 1px solid #eee; }
     .premium-badge {
         background: linear-gradient(90deg, #FFD700, #FF8C00);
-        padding: 10px;
-        border-radius: 15px;
-        color: white;
-        text-align: center;
-        font-weight: bold;
-        margin-bottom: 20px;
+        padding: 10px; border-radius: 15px; color: white;
+        text-align: center; font-weight: bold; margin-bottom: 20px;
         box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
     }
-    
-    /* الأزرار الاحترافية */
     .stButton > button {
         background: linear-gradient(45deg, #00c6ff, #0072ff) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 12px !important;
-        transition: 0.3s;
+        color: white !important; border: none !important;
+        border-radius: 12px !important; transition: 0.3s;
     }
-    .stButton > button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 5px 15px rgba(0,114,255,0.3);
-    }
+    .stButton > button:hover { transform: scale(1.02); box-shadow: 0 5px 15px rgba(0,114,255,0.3); }
     </style>
     """, unsafe_allow_html=True)
 
-# --- تهيئة البيانات ---
+# ==========================================
+# 1. Core Functions (المنطق البرمجي)
+# ==========================================
+def authenticate_user(username, password):
+    u, p = username.strip().lower(), password.strip()
+    if u == "free_admin" and p == "free_admin": return True, "free"
+    elif u == "premium_admin" and p == "premium_admin": return True, "premium"
+    return False, None
+
+def calculate_egyptian_taxes(revenue, expenses):
+    net_profit = revenue - expenses
+    # Law 152 Brackets
+    if revenue < 250000: tax_152 = 1000.0
+    elif revenue < 500000: tax_152 = 2500.0
+    elif revenue < 1000000: tax_152 = 5000.0
+    elif revenue < 2000000: tax_152 = revenue * 0.005
+    elif revenue < 3000000: tax_152 = revenue * 0.0075
+    else: tax_152 = revenue * 0.01
+    # Law 91
+    tax_91 = max(0.0, net_profit * 0.225)
+    return tax_152, tax_91, net_profit
+
+def add_transaction(current_df, category, trans_type, amount):
+    new_record = {'Date': datetime.now().strftime("%Y-%m-%d %H:%M"), 'Category': category, 'Type': trans_type, 'Amount': amount}
+    return pd.concat([current_df, pd.DataFrame([new_record])], ignore_index=True)
+
+# ==========================================
+# 2. Session State Initialization
+# ==========================================
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'user_role' not in st.session_state: st.session_state.user_role = None
 if 'data' not in st.session_state: 
     st.session_state.data = pd.DataFrame(columns=['Date', 'Category', 'Type', 'Amount'])
 
 # ==========================================
-# 🔐 نظام الدخول
+# 3. Login Interface
 # ==========================================
-def login():
+if not st.session_state.logged_in:
     st.markdown("<h1 style='text-align:center;'>🔐 SME Tax Calculator Pro</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center;'>Welcome! Please log in to your specialized SME tax dashboard.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#666;'>Secure access to your enterprise tax portal.</p>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 1.2, 1])
-    with col2:
-        with st.form("login"):
-            u = st.text_input("User ID")
-            p = st.text_input("Password", type="password")
-            submit = st.form_submit_button("Access Dashboard")
-            if submit:
-                # تنظيف البيانات وتحويلها لسمول
-                email, password = u.strip().lower(), p.strip()
-                if email == "free_admin" and password == "free_admin": 
-                    st.session_state.logged_in, st.session_state.user_role = True, "free"
+    _, col_login, _ = st.columns([1, 1.2, 1])
+    with col_login:
+        with st.form("login_form"):
+            user_input = st.text_input("User ID")
+            pass_input = st.text_input("Password", type="password")
+            if st.form_submit_button("Access Dashboard"):
+                is_valid, role = authenticate_user(user_input, pass_input)
+                if is_valid:
+                    st.session_state.logged_in = True
+                    st.session_state.user_role = role
                     st.rerun()
-                elif email == "premium_admin" and password == "premium_admin": 
-                    st.session_state.logged_in, st.session_state.user_role = True, "premium"
-                    st.rerun()
-                else: 
+                else:
                     st.error("Invalid credentials. Try Again.")
 
 # ==========================================
-# 🚀 التطبيق الرئيسي (The Pro Dashboard)
+# 4. Main Application (Dashboard)
 # ==========================================
-if not st.session_state.logged_in:
-    login()
 else:
     # Sidebar
     st.sidebar.markdown(f"#### Logged in as: **{st.session_state.user_role.upper()}**")
-    
-    # بادج البريميم - تصميم الصورة
     if st.session_state.user_role == "premium":
         st.sidebar.markdown('<div class="premium-badge">💎 PREMIUM ACCESS</div>', unsafe_allow_html=True)
     else:
@@ -122,145 +120,98 @@ else:
         st.session_state.logged_in = False
         st.rerun()
 
-    # --- الحسابات ---
-    def calculate_taxes(revenue, expenses):
-        profit = revenue - expenses
-        # Law 152
-        if revenue < 250000: t152 = 1000
-        elif revenue < 500000: t152 = 2500
-        elif revenue < 1000000: t152 = 5000
-        elif revenue < 2000000: t152 = revenue * 0.005
-        elif revenue < 3000000: t152 = revenue * 0.0075
-        else: t152 = revenue * 0.01
-        return t152, max(0, profit * 0.225)
+    # Calculate global metrics
+    df = st.session_state.data
+    total_rev = df[df['Type'] == 'Sale']['Amount'].sum() if not df.empty else 0.0
+    total_exp = df[df['Type'] == 'Expense']['Amount'].sum() if not df.empty else 0.0
+    t_152, t_91, profit = calculate_egyptian_taxes(total_rev, total_exp)
 
-    # ==========================================
-    # 1. الصفحة الرئيسية (الشبيهة بالصورة)
-    # ==========================================
+    # --- Home Dashboard ---
     if menu == "🏠 Home Dashboard":
-        st.title("SME Tax Calculator Pro")
-        st.markdown("<p style='color:#666;'>Welcome! Based on Egyptian Tax Authority Standards.</p>", unsafe_allow_html=True)
+        st.title("SME Financial Intelligence")
         
-        # كولوم للصور والملخص - نفس فكرة الصورة
-        col_img, col_metrics = st.columns([1.5, 1])
-        
-        with col_img:
-            # صورة Isometric (مثل الصورة المرفقة تماماً)
-            st.image("https://img.freepik.com/free-vector/isometric-online-tax-calculator_23-2148417937.jpg?w=826&t=st=1708170284~exp=1708170884~hmac=55f52f36d4f9b8c346f041a3d9023190805c873a1104e6c9869a8b1d92636a0f", width=400)
-
-        with col_metrics:
-            rev = st.session_state.data[st.session_state.data['Type']=='Sale']['Amount'].sum()
-            exp = st.session_state.data[st.session_state.data['Type']=='Expense']['Amount'].sum()
-            m1, m2 = st.columns(2)
-            m1.metric("Revenue", f"{rev:,.0f} ج.م")
-            m2.metric("Expenses", f"{exp:,.0f} ج.م")
-            m3, m4 = st.columns(2)
-            profit = rev - exp
-            m3.metric("Profit", f"{profit:,.0f} ج.م")
-            # حاسبة الضرائب المتوقعة
-            t152, t91 = calculate_taxes(rev, exp)
-            m4.metric("Tax Proj.", f"{t152:,.0f} ج.م")
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Gross Revenue", f"{total_rev:,.0f} EGP")
+        m2.metric("Operating Costs", f"{total_exp:,.0f} EGP")
+        m3.metric("Net Profit", f"{profit:,.0f} EGP")
+        m4.metric("Est. Tax (Law 152)", f"{t_152:,.0f} EGP", delta_color="inverse")
 
         st.markdown("---")
         
-        # رسومات بيانية (شيك جداً ومتحركة)
-        if not st.session_state.data.empty:
+        if not df.empty:
             st.markdown("### 📊 Quick Financial Analytics")
-            col_chart1, col_chart2 = st.columns(2)
-            
-            with col_chart1:
-                # رسم بياني بار كارت للمبيعات والمصروفات
-                fig_bar = px.bar(st.session_state.data, x='Category', y='Amount', color='Type', 
-                                 title="Revenue vs Expenses (By Category)", barmode='group',
-                                 color_discrete_sequence=['#00c6ff', '#ff4b4b'])
+            c_chart1, c_chart2 = st.columns(2)
+            with c_chart1:
+                fig_bar = px.bar(df, x='Category', y='Amount', color='Type', title="Cash Flow by Category", barmode='group', color_discrete_map={'Sale':'#00c6ff', 'Expense':'#ff4b4b'})
                 st.plotly_chart(fig_bar, use_container_width=True)
-                
-            with col_chart2:
-                # رسم بياني دائري لتوزيع المصروفات
-                exp_data = st.session_state.data[st.session_state.data['Type']=='Expense']
-                if not exp_data.empty:
-                    fig_pie = px.pie(exp_data, values='Amount', names='Category', 
-                                 title="Operating Expenses Distribution",
-                                 hole=0.4, color_discrete_sequence=px.colors.sequential.RdBu)
+            with c_chart2:
+                exp_df = df[df['Type'] == 'Expense']
+                if not exp_df.empty:
+                    fig_pie = px.pie(exp_df, values='Amount', names='Category', title="Expenses Breakdown", hole=0.4)
                     st.plotly_chart(fig_pie, use_container_width=True)
         else:
-            st.info("💡 Record some transactions to see charts here!")
+            st.info("💡 Start recording sales and expenses to generate interactive charts.")
 
-    # ==========================================
-    # 2. المبيعات
-    # ==========================================
+    # --- Sales Module ---
     elif menu == "🛒 Sales & Invoicing":
-        st.title("🛒 Sales Management")
-        with st.form("entry_sale", clear_on_submit=True):
-            col_a, col_b = st.columns(2)
-            cat = col_a.text_input("Category (e.g., Retail Sales)")
-            amt = col_b.number_input("Amount (EGP)", min_value=0.0)
-            if st.form_submit_button("Record Sale ✅"):
+        st.title("🛒 Sales Ledger")
+        with st.form("sale_form", clear_on_submit=True):
+            c1, c2 = st.columns(2)
+            cat = c1.text_input("Income Source / Client")
+            amt = c2.number_input("Amount (EGP)", min_value=0.0)
+            if st.form_submit_button("Record Revenue"):
                 if amt > 0:
-                    new_row = {'Date': datetime.now(), 'Category': cat, 'Type': 'Sale', 'Amount': amt}
-                    st.session_state.data = pd.concat([st.session_state.data, pd.DataFrame([new_row])], ignore_index=True)
-                    st.success("Sale Recorded!")
-        if not st.session_state.data.empty:
-            st.table(st.session_state.data[st.session_state.data['Type']=='Sale'][['Date', 'Category', 'Amount']])
+                    st.session_state.data = add_transaction(st.session_state.data, cat, "Sale", amt)
+                    st.success("Transaction Saved!")
+        if not df[df['Type'] == 'Sale'].empty:
+            st.dataframe(df[df['Type'] == 'Sale'], use_container_width=True)
 
-    # ==========================================
-    # 3. المصروفات
-    # ==========================================
+    # --- Expenses Module ---
     elif menu == "💸 Operating Expenses":
-        st.title("💸 Expense Management")
-        with st.form("entry_exp", clear_on_submit=True):
-            col_a, col_b = st.columns(2)
-            cat = col_a.text_input("Expense Item (e.g., Rent, Salaries)")
-            amt = col_b.number_input("Amount (EGP)", min_value=0.0)
-            if st.form_submit_button("Record Expense 💾"):
+        st.title("💸 Expense Ledger")
+        with st.form("exp_form", clear_on_submit=True):
+            c1, c2 = st.columns(2)
+            cat = c1.text_input("Expense Category (e.g., Rent, Utilities)")
+            amt = c2.number_input("Amount (EGP)", min_value=0.0)
+            if st.form_submit_button("Record Cost"):
                 if amt > 0:
-                    new_row = {'Date': datetime.now(), 'Category': cat, 'Type': 'Expense', 'Amount': amt}
-                    st.session_state.data = pd.concat([st.session_state.data, pd.DataFrame([new_row])], ignore_index=True)
-                    st.success("Expense Recorded!")
-        if not st.session_state.data.empty:
-            st.table(st.session_state.data[st.session_state.data['Type']=='Expense'][['Date', 'Category', 'Amount']])
+                    st.session_state.data = add_transaction(st.session_state.data, cat, "Expense", amt)
+                    st.success("Transaction Saved!")
+        if not df[df['Type'] == 'Expense'].empty:
+            st.dataframe(df[df['Type'] == 'Expense'], use_container_width=True)
 
-    # ==========================================
-    # 4. التحليلات المتقدمة (Premium Only)
-    # ==========================================
+    # --- Analytics Module (PRO) ---
     elif menu == "📈 Advanced Analytics (PRO)":
-        st.title("🚀 Advanced Tax Planning (PRO)")
+        st.title("🚀 Advanced AI Forecasting")
         if st.session_state.user_role == "premium":
-            st.markdown("#### Tax Bracket Forecasting (Simulated)")
-            # مثال للتوقع المستقبلي
-            simulated_dates = pd.date_range(start='2024-01-01', periods=12, freq='M')
-            simulated_revenue = [200000, 220000, 210000, 250000, 280000, 310000, 350000, 400000, 420000, 450000, 480000, 520000]
-            sim_data = pd.DataFrame({'Month': simulated_dates, 'Sales': simulated_revenue})
-            
-            fig = px.line(sim_data, x='Month', y='Sales', title="Projected Revenue Growth & Tax Impact")
+            st.markdown("#### Projected Revenue Growth (Next 12 Months)")
+            sim_dates = pd.date_range(start='2024-01-01', periods=12, freq='ME')
+            sim_rev = [200000, 220000, 210000, 250000, 280000, 310000, 350000, 400000, 420000, 450000, 480000, 520000]
+            fig = px.line(x=sim_dates, y=sim_rev, markers=True, title="Simulated AI Revenue Prediction")
             st.plotly_chart(fig, use_container_width=True)
             
-            st.download_button("📥 Download Detailed Report", data="Report Sample Content", file_name="Report.txt")
+            report_content = f"Financial Summary\nRevenue: {total_rev}\nExpenses: {total_exp}\nLaw 152 Tax: {t_152}\nLaw 91 Tax: {t_91}"
+            st.download_button("📥 Download Official Report", data=report_content, file_name="Tax_Report.txt")
         else:
-            st.error("🚫 report download and Advanced analytics are locked. Contact admin for PREMIUM upgrade.")
+            st.error("🚫 Forecasting and Report Downloads are PREMIUM features. Please upgrade.")
 
-    # ==========================================
-    # 5. تحليل الملفات (Premium Only)
-    # ==========================================
+    # --- Document Analysis (PRO) ---
     elif menu == "📂 Document Analysis (PRO)":
-        st.title("📑 Smart Document Analysis")
+        st.title("📑 Smart Document Parsing")
         if st.session_state.user_role == "premium":
-            st.markdown("Upload your invoices (PDF/CSV) and the AI will analyze the legal structure.")
-            st.file_uploader("Upload File")
-            st.warning("⚠️ This is a simulated interface. Final AI engine integration pending.")
+            st.write("Upload PDF or CSV invoices to automatically extract financial data.")
+            st.file_uploader("Drop your files here")
+            st.warning("⚠️ Module under construction: OCR Engine initialization pending.")
         else:
-            st.error("🔒 Document analysis is only for Premium users.")
+            st.error("🔒 Document Analysis is restricted to Premium Users.")
 
-    # ==========================================
-    # 6. فريق العمل (تم حل مشكلة الـ ID)
-    # ==========================================
+    # --- Team Module ---
     elif menu == "👥 Team & Legal":
-        st.title("👥 Team & Legal")
-        st.markdown("Developed strictly based on Egyptian Tax Authority standards (Law 152/2020 & Law 91/2005).")
-        
+        st.title("👥 Project Developers")
         team_data = {
             "Member Name": ["Omar Mohamed Ahmed", "Mennatallah Moamen", "Mareez Adham", "Basmala Mohamed Saad", "Abdelrahman Ali", "Fares Salah", "Mohamed Hatem", "Youssef Sameh", "Apanob Gamil"],
             "Student ID": ["2202297", "2200216", "2200243", "2200236", "2200190", "2202312", "2200137", "2200176", "2202995"]
         }
         st.table(pd.DataFrame(team_data))
-        st.caption("Authorized Graduation Project - 2026")
+        st.markdown("---")
+        st.info("Developed strictly based on **Egyptian Tax Authority Standards (Law 152/2020 & Law 91/2005)** for Graduation Project 2026.")
