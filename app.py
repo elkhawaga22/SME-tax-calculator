@@ -202,28 +202,33 @@ else:
     # ------------------------------------------
     elif menu == "📝 Sales & Invoices":
         st.header("Invoices & Sales")
-        with st.form("invoice_form"):
+       elif menu == "📝 Sales & Invoices":
+        st.header("Invoices & Sales")
+        with st.form("invoice_form", clear_on_submit=True):
             col1, col2 = st.columns(2)
             client = col1.text_input("Client Name")
             amt = col2.number_input("Amount", min_value=0.0)
             if st.form_submit_button("Create Invoice"):
                 new_row = pd.DataFrame([{'Date': datetime.now(), 'Category': client, 'Type': 'Sale', 'Amount': amt}])
                 st.session_state.data = pd.concat([st.session_state.data, new_row], ignore_index=True)
-                st.success("Invoice created successfully!")
-        st.dataframe(df[df['Type']=='Sale'].sort_values('Date', ascending=False), use_container_width=True)
+                st.success("تم الحفظ بنجاح!")
+                st.rerun() # ده الأمر السحري اللي بيخلي البيانات تظهر فوراً
 
-    elif menu == "💸 All Expenses":
+        st.dataframe(st.session_state.data[st.session_state.data['Type']=='Sale'].sort_values('Date', ascending=False), use_container_width=True)
+
+  elif menu == "💸 All Expenses":
         st.header("Expense Tracking")
-        with st.form("exp_form"):
+        with st.form("exp_form", clear_on_submit=True):
             col1, col2 = st.columns(2)
-            cat = col1.text_input("Expense Category (e.g. Rent, Server, Ads)")
+            cat = col1.text_input("Expense Category")
             amt = col2.number_input("Amount", min_value=0.0)
             if st.form_submit_button("Log Expense"):
                 new_row = pd.DataFrame([{'Date': datetime.now(), 'Category': cat, 'Type': 'Expense', 'Amount': amt}])
                 st.session_state.data = pd.concat([st.session_state.data, new_row], ignore_index=True)
-                st.success("Expense logged successfully!")
-        st.dataframe(df[df['Type']=='Expense'].sort_values('Date', ascending=False), use_container_width=True)
+                st.success("تم الحفظ بنجاح!")
+                st.rerun() # عشان الصفحة تحدث نفسها
 
+        st.dataframe(st.session_state.data[st.session_state.data['Type']=='Expense'].sort_values('Date', ascending=False), use_container_width=True)
     # ------------------------------------------
     # SaaS Premium Features
     # ------------------------------------------
