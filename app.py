@@ -213,8 +213,8 @@ else:
                 st.rerun() # ده الأمر السحري اللي بيخلي البيانات تظهر فوراً
 
         st.dataframe(st.session_state.data[st.session_state.data['Type']=='Sale'].sort_values('Date', ascending=False), use_container_width=True)
-
-  elif menu == "💸 All Expenses":
+    
+    elif menu == "💸 All Expenses":
         st.header("Expense Tracking")
         with st.form("exp_form", clear_on_submit=True):
             col1, col2 = st.columns(2)
