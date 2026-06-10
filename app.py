@@ -53,15 +53,19 @@ def authenticate_user(username, password):
 
 def calculate_egyptian_taxes(revenue, expenses):
     net_profit = revenue - expenses
-    # Law 152
+    
+    # 1. قانون 152 (كما هو)
     if revenue < 250000: tax_152 = 1000.0
     elif revenue < 500000: tax_152 = 2500.0
     elif revenue < 1000000: tax_152 = 5000.0
     elif revenue < 2000000: tax_152 = revenue * 0.005
     elif revenue < 3000000: tax_152 = revenue * 0.0075
     else: tax_152 = revenue * 0.01
-    # Law 91
-    tax_91 = max(0.0, net_profit * 0.225)
+    
+    # 2. قانون 91 لسنة 2005 (الطريقة الثانية)
+    # يتم حسابها على صافي الربح التجاري بنسبة 22.5%
+    tax_91 = max(0.0, net_profit * 0.225) 
+    
     return tax_152, tax_91, net_profit
 
 def generate_smart_insights(revenue, expenses, tax_152, tax_91):
@@ -153,11 +157,18 @@ else:
     if menu == "📊 Overview":
         st.header("Dashboard Overview")
         
+        # في قسم الـ Metrics داخل الـ Overview
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Gross Revenue", f"EGP {total_rev:,.0f}")
         m2.metric("Total Expenses", f"EGP {total_exp:,.0f}")
-        m3.metric("Net Profit", f"EGP {profit:,.0f}", delta=f"{(profit/total_rev)*100 if total_rev else 0:.1f}% Margin")
-        m4.metric("Est. Tax (Law 152)", f"EGP {t_152:,.0f}", delta="Optimal", delta_color="normal")
+        m3.metric("Net Profit", f"EGP {profit:,.0f}")
+        
+        # إضافة الطريقتين للمقارنة في الـ Dashboard
+        m4.markdown(f"""
+        **Tax Estimates:**
+        - Law 152: {t_152:,.0f} EGP
+        - Law 91: {t_91:,.0f} EGP
+        """)
 
         col_chart1, col_chart2 = st.columns([2, 1])
         with col_chart1:
