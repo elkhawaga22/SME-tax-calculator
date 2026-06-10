@@ -200,8 +200,6 @@ else:
     # ------------------------------------------
     # Data Entry & Invoicing
     # ------------------------------------------
-    elif menu == "📝 Sales & Invoices":
-        st.header("Invoices & Sales")
        elif menu == "📝 Sales & Invoices":
         st.header("Invoices & Sales")
         with st.form("invoice_form", clear_on_submit=True):
